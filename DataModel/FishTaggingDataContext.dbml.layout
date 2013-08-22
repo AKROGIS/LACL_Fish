@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ordesignerObjectsDiagram dslVersion="1.0.0.0" absoluteBounds="0, 0, 11, 8.5" name="FishTagging">
+  <DataContextMoniker Name="/FishTaggingDataContext" />
+  <nestedChildShapes>
+    <classShape Id="b4875a76-5341-412d-9a6f-bff00f434d7d" absoluteBounds="4.625, 2.375, 2, 1.9631982421875">
+      <DataClassMoniker Name="/FishTaggingDataContext/RawDataFile" />
+      <nestedChildShapes>
+        <elementListCompartment Id="079919cd-1b21-4757-aee8-8ca53fc2728e" absoluteBounds="4.64, 2.835, 1.9700000000000002, 1.4031982421875" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+      </nestedChildShapes>
+    </classShape>
+  </nestedChildShapes>
+</ordesignerObjectsDiagram>

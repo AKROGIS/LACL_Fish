@@ -1,0 +1,37 @@
+﻿<?xml version="1.0" encoding="utf-8"?><Database Name="Fish_Tagging" Class="FishTaggingDataContext" xmlns="http://schemas.microsoft.com/linqtosql/dbml/2007">
+  <Connection Mode="AppSettings" ConnectionString="Data Source=inpakroms53ais;Initial Catalog=Fish_Tagging;Integrated Security=True" SettingsObjectName="DataModel.Properties.Settings" SettingsPropertyName="Fish_TaggingConnectionString" Provider="System.Data.SqlClient" />
+  <Table Name="dbo.RawDataFiles" Member="RawDataFiles">
+    <Type Name="RawDataFile">
+      <Column Name="FileId" Type="System.Int32" DbType="Int NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
+      <Column Name="FileName" Type="System.String" DbType="NVarChar(255) NOT NULL" CanBeNull="false" />
+      <Column Name="FolderName" Type="System.String" DbType="NVarChar(1000)" CanBeNull="true" />
+      <Column Name="UploadDate" Type="System.DateTime" DbType="DateTime2 NOT NULL" CanBeNull="false" />
+      <Column Name="UploaderLogin" Type="System.String" DbType="NVarChar(128) NOT NULL" CanBeNull="false" />
+      <Column Name="Contents" Type="System.Data.Linq.Binary" DbType="VarBinary(MAX) NOT NULL" CanBeNull="false" UpdateCheck="Never" IsDelayLoaded="true" />
+    </Type>
+    <InsertFunction FunctionId="FunctionId1">
+      <Argument Parameter="fileName" Member="FileName" />
+      <Argument Parameter="folderName" Member="FolderName" />
+      <Argument Parameter="contents" Member="Contents" />
+      <Argument Parameter="fileId" Member="FileId" />
+      <Argument Parameter="uploadDate" Member="UploadDate" />
+      <Argument Parameter="uploaderLogin" Member="UploaderLogin" />
+    </InsertFunction>
+    <DeleteFunction FunctionId="FunctionId2">
+      <Argument Parameter="fileId" Member="FileId" Version="Original" />
+    </DeleteFunction>
+  </Table>
+  <Function Id="FunctionId2" Name="dbo.RawDataFile_Delete" Method="RawDataFile_Delete">
+    <Parameter Name="FileId" Parameter="fileId" Type="System.Int32" DbType="Int" />
+    <Return Type="System.Int32" />
+  </Function>
+  <Function Id="FunctionId1" Name="dbo.RawDataFile_Insert" Method="RawDataFile_Insert">
+    <Parameter Name="FileName" Parameter="fileName" Type="System.String" DbType="NVarChar(255)" />
+    <Parameter Name="FolderName" Parameter="folderName" Type="System.String" DbType="NVarChar(1000)" />
+    <Parameter Name="Contents" Parameter="contents" Type="System.Data.Linq.Binary" DbType="VarBinary(MAX)" />
+    <Parameter Name="FileId" Parameter="fileId" Type="System.Int32" DbType="Int" Direction="InOut" />
+    <Parameter Name="UploadDate" Parameter="uploadDate" Type="System.DateTime" DbType="DateTime2" Direction="InOut" />
+    <Parameter Name="UploaderLogin" Parameter="uploaderLogin" Type="System.String" DbType="NVarChar(128)" Direction="InOut" />
+    <Return Type="System.Int32" />
+  </Function>
+</Database>
