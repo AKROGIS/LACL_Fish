@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataModel", "DataModel\Data
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "filefilter", "filefilter\filefilter.csproj", "{0FA2A2CC-B22D-41EB-A76A-28E04AA350E0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqlServer_Functions", "SqlServer_Functions\SqlServer_Functions.csproj", "{6DC59D4D-BD72-4AF1-88FA-4E96C8818966}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -47,6 +49,19 @@ Global
 		{0FA2A2CC-B22D-41EB-A76A-28E04AA350E0}.Release|Mixed Platforms.Build.0 = Release|x86
 		{0FA2A2CC-B22D-41EB-A76A-28E04AA350E0}.Release|x86.ActiveCfg = Release|x86
 		{0FA2A2CC-B22D-41EB-A76A-28E04AA350E0}.Release|x86.Build.0 = Release|x86
+		{6DC59D4D-BD72-4AF1-88FA-4E96C8818966}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6DC59D4D-BD72-4AF1-88FA-4E96C8818966}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6DC59D4D-BD72-4AF1-88FA-4E96C8818966}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{6DC59D4D-BD72-4AF1-88FA-4E96C8818966}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{6DC59D4D-BD72-4AF1-88FA-4E96C8818966}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{6DC59D4D-BD72-4AF1-88FA-4E96C8818966}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6DC59D4D-BD72-4AF1-88FA-4E96C8818966}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6DC59D4D-BD72-4AF1-88FA-4E96C8818966}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6DC59D4D-BD72-4AF1-88FA-4E96C8818966}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{6DC59D4D-BD72-4AF1-88FA-4E96C8818966}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{6DC59D4D-BD72-4AF1-88FA-4E96C8818966}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{6DC59D4D-BD72-4AF1-88FA-4E96C8818966}.Release|Mixed Platforms.Deploy.0 = Release|Any CPU
+		{6DC59D4D-BD72-4AF1-88FA-4E96C8818966}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
