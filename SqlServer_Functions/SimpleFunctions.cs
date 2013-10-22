@@ -24,6 +24,20 @@ namespace SqlServer_Functions
         }
 
         [SqlFunction(IsDeterministic = true, IsPrecise = true)]
+        public static SqlDateTime DateTimeFromAts(int year, int days, int hours, int minutes)
+        {
+            var datetime = new DateTime(2000 + year, 1, 1) + new TimeSpan(days-1, hours, minutes, 0);
+            return new SqlDateTime(datetime);
+        }
+
+        [SqlFunction(IsDeterministic = true, IsPrecise = true)]
+        public static SqlDateTime DateTimeFromAtsWithSeconds(int year, int days, int hours, int minutes, int seconds)
+        {
+            var datetime = new DateTime(2000 + year, 1, 1) + new TimeSpan(days-1, hours, minutes, seconds);
+            return new SqlDateTime(datetime);
+        }
+
+        [SqlFunction(IsDeterministic = true, IsPrecise = true)]
         public static SqlBinary Sha1Hash(SqlBytes data)
         {
             return (new SHA1CryptoServiceProvider()).ComputeHash(data.Stream);

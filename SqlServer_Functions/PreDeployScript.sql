@@ -2,7 +2,7 @@
 -- Curiously, they both work when called from SSMS.
 -- more curiouser, the second method will fail (column not found), if the column has already been deleted
 /*
-USE [Animal_Movement]
+USE [Fish_Tagging]
 GO
 
 IF COL_LENGTH('RawDataFiles','Sha1Hash') IS NOT NULL --safely check if column exists
