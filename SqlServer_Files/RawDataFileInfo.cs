@@ -1,18 +1,92 @@
 ﻿using System;
-using System.Collections;
 using System.Data;
 using System.Data.SqlClient;
 using System.Data.SqlTypes;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
 using Microsoft.SqlServer.Server;
 
 namespace SqlServer_Files
 {
-    public class CollarFileInfo
+    public class RawDataFileInfo
     {
+        [SqlProcedure]
+        public static void ProcessRawDataFile(SqlInt32 fileId)
+        {
+            Byte[] bytes = null;
+            using (var connection = new SqlConnection("context connection=true"))
+            {
+                connection.Open();
+                string sql = "SELECT [Contents] FROM [dbo].[RawDataFiles] WHERE [FileId] = @fileId";
+                using (var command = new SqlCommand(sql, connection))
+                {
+                    command.Parameters.Add(new SqlParameter("@fileId", SqlDbType.Int) { Value = fileId });
+                    using (SqlDataReader results = command.ExecuteReader())
+                    {
+                        while (results.Read())
+                        {
+                            bytes = results.GetSqlBytes(0).Buffer;
+                        }
+                    }
+                }
+                if (bytes == null)
+                    throw new InvalidOperationException("File not found: " + fileId);
+                try
+                {
+                    IParser parser = selectParser(bytes);
+                    if (parser == null) throw new InvalidOperationException("file contents is not a known format");
+                    ClearErrors(connection, fileId);
+                    parser.ParseFileIntoDatabase(fileId, connection);
+                }
+                catch (Exception ex)
+                {
+                    LogError(connection, fileId, ex.Message);
+                }
+                finally
+                {
+                    sql = "UPDATE [dbo].[RawDataFiles] SET [ProcessingDone] = 1 WHERE FileId = @FileId";
+                    using (var command = new SqlCommand(sql, connection))
+                    {
+                        command.Parameters.Add(new SqlParameter("@FileId", SqlDbType.Int) { Value = fileId });
+                        command.ExecuteNonQuery();
+                    }
+                }
+            }
+        }
+
+        private static void ClearErrors(SqlConnection database, SqlInt32 fileId)
+        {
+            const string sql = "UPDATE [dbo].[RawDataFiles] SET [ProcessingErrors] = NULL WHERE FileId = @FileId";
+            using (var command = new SqlCommand(sql, database))
+            {
+                command.Parameters.Add(new SqlParameter("@FileId", SqlDbType.Int) { Value = fileId });
+                command.ExecuteNonQuery();
+            }
+        }
+
+        private static void LogError(SqlConnection database, SqlInt32 fileId, string error)
+        {
+            const string sql = "UPDATE [dbo].[RawDataFiles] SET [ProcessingErrors] = @Errors WHERE FileId = @FileId";
+            using (var command = new SqlCommand(sql, database))
+            {
+                command.Parameters.Add(new SqlParameter("@FileId", SqlDbType.Int) { Value = fileId });
+                command.Parameters.Add(new SqlParameter("@Errors", SqlDbType.NVarChar) { Value = error });
+                command.ExecuteNonQuery();
+            }
+        }
+
+        private static IParser selectParser(byte[] bytes)
+        {
+            //FIXME - use header sentinals to select the correct parser;
+            //TODO - make a list of known parsers, have each parser
+            //TODO - implement two static methods that optionally return a static sentinal or regex for
+            //TODO - some text in the first 500 bytes.
+            //TODO - If that fails, then instantiate a new parser for each type and return the first one that
+            //TODO - says it is valid for the data.
+            var parser = new ATSWinRec(bytes);
+            return parser.IsValidData ? parser : null;
+        }
+
+
+        /*
         [SqlFunction(IsDeterministic = true, IsPrecise = true, DataAccess = DataAccessKind.Read)]
         public static char FileFormat(SqlBytes data)
         {
@@ -83,63 +157,8 @@ namespace SqlServer_Files
             SummerizeFile(fileId, bytes, format);
         }
 
-        [SqlFunction(
-            DataAccess = DataAccessKind.Read,
-            FillRowMethodName = "FormatE_FillRow",
-            TableDefinition =
-              @"[LineNumber] [int],
-                [ProgramId] [nvarchar](50) NULL,
-                [PlatformId] [nvarchar](50) NULL,
-                [TransmissionDate] [datetime2](7) NULL,
-                [LocationDate] [datetime2](7) NULL,
-                [Latitude] [real] NULL,
-                [Longitude] [real] NULL,
-                [Altitude] [real] NULL,
-                [LocationClass] [nchar](1) NULL,
-                [Message] [varbinary](50) NULL")]
-        public static IEnumerable ParseFormatE(SqlInt32 fileId)
-        {
-            Byte[] bytes = null;
-            using (var connection = new SqlConnection("context connection=true"))
-            {
-                connection.Open();
-                const string sql = "SELECT [Contents] FROM [dbo].[CollarFiles] WHERE [FileId] = @fileId AND [Format] = 'E'";
-                using (var command = new SqlCommand(sql, connection))
-                {
-                    command.Parameters.Add(new SqlParameter("@fileId", SqlDbType.Int) { Value = fileId });
-                    using (SqlDataReader results = command.ExecuteReader())
-                        while (results.Read())
-                            bytes = results.GetSqlBytes(0).Buffer;
-                }
-            }
-            return (new ATSWinRec(bytes)).GetTransmissions();
-        }
 
-        public static void FormatE_FillRow(
-            object inputObject,
-            out SqlInt32 lineNumber,
-            out SqlString programNumber,
-            out SqlString platformId,
-            out DateTime transmissionDate,
-            out DateTime? locationDate,
-            out float? latitude,
-            out float? longitude,
-            out float? altitude,
-            out char? locationClass,
-            out Byte[] message)
-        {
-            var transmission = (ArgosTransmission) inputObject;
-            lineNumber = transmission.LineNumber;
-            programNumber = transmission.ProgramId;
-            platformId = transmission.PlatformId;
-            transmissionDate = transmission.DateTime;
-            locationDate = transmission.Location == null ? (DateTime?) null : transmission.Location.DateTime;
-            latitude = transmission.Location == null ? (float?) null : transmission.Location.Latitude;
-            longitude = transmission.Location == null ? (float?)null : transmission.Location.Longitude;
-            altitude = transmission.Location == null ? (float?)null : transmission.Location.Altitude;
-            locationClass = transmission.Location == null ? (char?)null : transmission.Location.Class;
-            message = transmission.Message;
-        }
+
 
 
         private static void SummerizeFile(SqlInt32 fileId, Byte[] contents, char format)
@@ -189,5 +208,6 @@ namespace SqlServer_Files
                 }
             }
         }
+         * */
     }
 }

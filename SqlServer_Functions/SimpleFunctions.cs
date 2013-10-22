@@ -1,4 +1,5 @@
-﻿using System.Data.SqlTypes;
+﻿using System;
+using System.Data.SqlTypes;
 using System.Security.Cryptography;
 using Microsoft.SqlServer.Server;
 
