@@ -52,41 +52,6 @@ namespace SqlServer_Files
             }
         }
 
-        [SqlProcedure]
-        public static void AddBlankLineToFile(SqlInt32 fileId)
-        {
-            Byte[] bytes = null;
-            using (var connection = new SqlConnection("context connection=true"))
-            {
-                connection.Open();
-                string sql = "SELECT [Contents] FROM [dbo].[RawDataFiles] WHERE [FileId] = @fileId";
-                using (var command = new SqlCommand(sql, connection))
-                {
-                    command.Parameters.Add(new SqlParameter("@fileId", SqlDbType.Int) { Value = fileId });
-                    using (SqlDataReader results = command.ExecuteReader())
-                    {
-                        while (results.Read())
-                        {
-                            bytes = results.GetSqlBytes(0).Buffer;
-                        }
-                    }
-                }
-                if (bytes == null)
-                    throw new InvalidOperationException("File not found: " + fileId);
-                var contents = new byte[bytes.Length+2];
-                contents[0] = 0x0d;
-                contents[1] = 0x0a;
-                bytes.CopyTo(contents,2);
-                sql = "UPDATE [dbo].[RawDataFiles] SET [Contents] = @Contents WHERE FileId = @FileId";
-                using (var command = new SqlCommand(sql, connection))
-                {
-                    command.Parameters.Add(new SqlParameter("@FileId", SqlDbType.Int) { Value = fileId });
-                    command.Parameters.Add(new SqlParameter("@Contents", SqlDbType.VarBinary) { Value = contents, Size = -1 });
-                    command.ExecuteNonQuery();
-                }
-            }
-        }
-
         private static void ClearErrors(SqlConnection database, SqlInt32 fileId)
         {
             const string sql = "UPDATE [dbo].[RawDataFiles] SET [ProcessingErrors] = NULL WHERE FileId = @FileId";
