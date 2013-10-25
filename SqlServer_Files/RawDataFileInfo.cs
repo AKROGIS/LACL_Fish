@@ -81,7 +81,10 @@ namespace SqlServer_Files
             //TODO - some text in the first 500 bytes.
             //TODO - If that fails, then instantiate a new parser for each type and return the first one that
             //TODO - says it is valid for the data.
-            var parser = new ATSWinRec(bytes);
+            IParser parser = new Srx400Parser(bytes);
+            if (parser.IsValidData)
+                return parser;
+            parser = new ATSWinRec(bytes);
             return parser.IsValidData ? parser : null;
         }
 

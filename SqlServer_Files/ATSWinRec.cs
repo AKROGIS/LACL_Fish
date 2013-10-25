@@ -40,7 +40,7 @@ namespace SqlServer_Files
             ClearDatabase(database, fileId);
             int lineNumber = 7;
             int stationaryTargets = 0;
-            int AerialTargets = 0;
+            int aerialTargets = 0;
             bool foundAerialSummary = false;
             bool foundStationarySummary = false;
             foreach (var line in GetLines(_bytes).Skip(lineNumber))
@@ -55,11 +55,11 @@ namespace SqlServer_Files
                         break;
                     case 11:
                         AddLineToTracking(database, fileId, lineNumber, tokens);
-                        AerialTargets++;
+                        aerialTargets++;
                         break;
                     case 12:
                         AddLineToTrackingUtm(database, fileId, lineNumber, tokens);
-                        AerialTargets++;
+                        aerialTargets++;
                         break;
                     default:
                         if (tokens.Length == 1)
@@ -67,7 +67,7 @@ namespace SqlServer_Files
                             var token = tokens[0].Trim();
                             if (token == "")
                                 continue;
-                            if (token == String.Format("This file contains {0} Aerial targets", AerialTargets))
+                            if (token == String.Format("This file contains {0} Aerial targets", aerialTargets))
                             {
                                 foundAerialSummary = true;
                                 continue;
@@ -81,13 +81,13 @@ namespace SqlServer_Files
                         throw new InvalidDataException(String.Format("Line {0} is not a recognized format.", lineNumber));
                 }
             }
-            if (stationaryTargets == 0 && AerialTargets == 0)
+            if (stationaryTargets == 0 && aerialTargets == 0)
                 throw new InvalidDataException("No targets found in data file");
             if (!foundAerialSummary || !foundStationarySummary)
                 throw new InvalidDataException("Summary lines not found at end of file, or summary does not match data");
         }
 
-        private IEnumerable<string> GetLines(Byte[] bytes)
+        private static IEnumerable<string> GetLines(Byte[] bytes)
         {
             using (var stream = new MemoryStream(bytes, 0, bytes.Length))
             using (var reader = new StreamReader(stream, Encoding.UTF8))
@@ -95,7 +95,7 @@ namespace SqlServer_Files
                     yield return reader.ReadLine();
         }
 
-        private void ClearDatabase(SqlConnection database, SqlInt32 fileId)
+        private static void ClearDatabase(SqlConnection database, SqlInt32 fileId)
         {
             var sql = "DELETE [dbo].[TelemetryDataATSStationary] WHERE FileId = @FileId";
             using (var command = new SqlCommand(sql, database))
@@ -111,7 +111,7 @@ namespace SqlServer_Files
             }
         }
 
-        private void AddLineToStationary(SqlConnection database, SqlInt32 fileId, int lineNumber, string[] tokens)
+        private static void AddLineToStationary(SqlConnection database, SqlInt32 fileId, int lineNumber, string[] tokens)
         {
             const string sql = "INSERT INTO [dbo].[TelemetryDataATSStationary] (FileId, LineNumber, Year, Day, Hour, Minute, Antenna, Frequency, TagNumberAndMortality, SignalStrength, DuplicateCount)" +
                                " VALUES (@FileId, @LineNumber, @Year, @Day, @Hour, @Minute, @Antenna, @Frequency, @TagNumberAndMortality, @SignalStrength, @DuplicateCount)";
@@ -132,7 +132,7 @@ namespace SqlServer_Files
             }
         }
 
-        private void AddLineToTracking(SqlConnection database, SqlInt32 fileId, int lineNumber, string[] tokens)
+        private static void AddLineToTracking(SqlConnection database, SqlInt32 fileId, int lineNumber, string[] tokens)
         {
             const string sql = "INSERT INTO [dbo].[TelemetryDataATSTracking] (FileId, LineNumber, Year, Day, Hour, Minute, Second, Frequency, TagNumberAndMortality, SignalStrength, Latitude, Longitude, GpsAge)" +
                                " VALUES (@FileId, @LineNumber, @Year, @Day, @Hour, @Minute, @Second, @Frequency, @TagNumberAndMortality, @SignalStrength, @Latitude, @Longitude, @GpsAge)";
@@ -155,7 +155,7 @@ namespace SqlServer_Files
             }
         }
 
-        private void AddLineToTrackingUtm(SqlConnection database, SqlInt32 fileId, int lineNumber, string[] tokens)
+        private static void AddLineToTrackingUtm(SqlConnection database, SqlInt32 fileId, int lineNumber, string[] tokens)
         {
             const string sql = "INSERT INTO [dbo].[TelemetryDataATSTracking] (FileId, LineNumber, Year, Day, Hour, Minute, Second, Frequency, TagNumberAndMortality, SignalStrength, UtmX, UtmY, UtmZone, GpsAge)" +
                                " VALUES (@FileId, @LineNumber, @Year, @Day, @Hour, @Minute, @Second, @Frequency, @TagNumberAndMortality, @SignalStrength, @UtmX, @UtmY, @UtmZone, @GpsAge)";

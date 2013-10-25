@@ -9,7 +9,7 @@ using System.Text;
 
 namespace SqlServer_Files
 {
-    class Srx400Parser
+    class Srx400Parser : IParser
     {
         private readonly Byte[] _bytes;
 
@@ -37,10 +37,27 @@ namespace SqlServer_Files
             AntennaDetails,
             HydrophoneGroup,
             HydrophoneDetails,
+            FilterDetails,
             GpsMode,
             ScanTable,
             DataTable,
             End
+        }
+
+        [Flags]
+        enum DataLineType
+        {
+            HasLatLong       = 1,
+            HasStopDate      = 2,
+            HasDataAttribute = 4,
+            HasSensorAttribute = 8,
+            GpsOn = 16,
+        }
+
+        private struct Location
+        {
+            internal float? Lat;
+            internal float? Long;
         }
 
         public void ParseFileIntoDatabase(SqlInt32 fileId, SqlConnection database)
@@ -50,6 +67,7 @@ namespace SqlServer_Files
             var changeDateTime = new DateTime();
             int changeLineNumber = 0;
             bool haveScanTable = false;
+            DataLineType lineType = 0;
             var environment = new Dictionary<string, string>();
             int lineNumber = 2;
             foreach (var line in GetLines(_bytes).Skip(lineNumber))
@@ -88,14 +106,29 @@ namespace SqlServer_Files
                             state = ParseState.ScanTable;
                             break;
                         }
+                        if (line.StartsWith("Filter:"))
+                        {
+                            state = ParseState.FilterDetails;
+                            ParseKeyValue(line, environment);
+                            break;
+                        }
+                        if (line.StartsWith("GPS data mode ="))
+                        {
+                            state = ParseState.GpsMode;
+                            ParseKeyValue(line, environment);
+                            break;
+                        }
                         if (line.StartsWith("changed: "))
                         {
                             WriteEnvironmentToDatabase(database, fileId, changeLineNumber, changeDateTime, environment);
                             environment.Clear();
                             changeDateTime = ParseSrx400DateTime(line.Substring(9), lineNumber);
+                            changeLineNumber = lineNumber;
+                            break;
                         }
                         if (line.Trim() == "Code_log data:")
                         {
+                            lineType = 0;
                             WriteEnvironmentToDatabase(database, fileId, changeLineNumber, changeDateTime, environment);
                             if (!haveScanTable)
                                 throw new FormatException("No scan table found before the data table");
@@ -105,6 +138,7 @@ namespace SqlServer_Files
                         if (!ParseKeyValue(line, environment))
                             throw new FormatException("Unrecognized environment parameter in file at line " + lineNumber);
                         break;
+
                     case ParseState.AntennaGroup:
                         if (line == String.Empty)
                         {
@@ -113,7 +147,8 @@ namespace SqlServer_Files
                         }
                         if (line.StartsWith("Antenna      Gain"))
                             continue;
-                        AddLineToAntennas(database, fileId, lineNumber, changeDateTime, "Antenna", line.Trim().Split());
+                        AddLineToAntennas(database, fileId, lineNumber, changeDateTime, "Antenna",
+                            line.Trim().Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries));
                         break;
 
                     case ParseState.AntennaDetails:
@@ -129,12 +164,13 @@ namespace SqlServer_Files
                     case ParseState.HydrophoneGroup:
                         if (line == String.Empty)
                         {
-                            state = ParseState.AntennaDetails;
+                            state = ParseState.HydrophoneDetails;
                             break;
                         }
                         if (line.StartsWith("Hydrophone   Gain"))
                             continue;
-                        AddLineToAntennas(database, fileId, lineNumber, changeDateTime, "Hydrophone", line.Trim().Split());
+                        AddLineToAntennas(database, fileId, lineNumber, changeDateTime, "Hydrophone",
+                            line.Trim().Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries));
                         break;
 
                     case ParseState.HydrophoneDetails:
@@ -147,14 +183,25 @@ namespace SqlServer_Files
                             throw new FormatException("Unrecognized hydrophone parameter in file at line " + lineNumber);
                         break;
 
+                    case ParseState.FilterDetails:
+                        if (line == String.Empty)
+                        {
+                            state = ParseState.ChangeSet;
+                            break;
+                        }
+                        AddLineToFilters(database, fileId, lineNumber, changeDateTime,
+                            line.Trim().Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries));
+                        break;
+
                     case ParseState.GpsMode:
                         if (line == String.Empty)
                         {
                             state = ParseState.ChangeSet;
                             break;
                         }
-                        //TODO skip headers,
-                        //TODO read lat/long lines, add to Location table
+                        if (line == "Reference position" || line == "  Latitude        Longitude")
+                            continue;
+                        AddLineToLocations(database, fileId, lineNumber, changeDateTime, line);
                         break;
 
                     case ParseState.ScanTable:
@@ -165,7 +212,8 @@ namespace SqlServer_Files
                         }
                         if (line.Trim() == "CHANNEL  FREQUENCY")
                             continue;
-                        AddLineToChannels(database, fileId, lineNumber, changeDateTime, line.Trim().Split());
+                        AddLineToChannels(database, fileId, lineNumber, changeDateTime,
+                            line.Trim().Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries));
                         haveScanTable = true;
                         break;
 
@@ -175,16 +223,58 @@ namespace SqlServer_Files
                             state = ParseState.End;
                             break;
                         }
-                        if (line.StartsWith(" "))
+                        var tokens = line.Trim().Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries);
+                        if (tokens.Length == 2 && tokens[0] == "Start")
+                        {
+                            lineType = lineType | DataLineType.HasStopDate;
                             continue;
-                        //FIXME - I need to check for "   GPS data mode ON/OFF"
-                        //FIXME GPS mode on sets the reference position, needs to be written to the GPS table
-                        //cases:
-                        // date battery ...
-                        // GPS data mode ... date unknown...
-                        // date ... date
-                        // date ... lat/lon
-                        AddLineToTracking(database, fileId, lineNumber, line.Trim());
+                        }
+                        if (tokens.Length == 2 && tokens[0] == "Latitude")
+                        {
+                            lineType = lineType | DataLineType.HasLatLong;
+                            continue;
+                        }
+                        if (tokens[0] == "Date")
+                        {
+                            if (tokens[6] == "Data")
+                            {
+                                lineType = lineType | DataLineType.HasDataAttribute;
+                            }
+                            if (tokens[6] == "Sensor" || tokens[7] == "Sensor")
+                            {
+                                lineType = lineType | DataLineType.HasSensorAttribute;
+                            }
+                            if (tokens[tokens.Length-1] == "Longitude")
+                            {
+                                lineType = lineType | DataLineType.HasLatLong;
+                            }
+                            break;
+                        }
+                        if (tokens[2] == "Battery")
+                        {
+                            AddLineToBatteryStatus(database, fileId, lineNumber,
+                                ParseSrx400DateTime(tokens[0] + " " + tokens[1], lineNumber), tokens[3]);
+                            break;
+                        }
+                        if (tokens[0] == "GPS")
+                        {
+                            if (tokens[3] == "OFF")
+                            {
+                                if ((lineType & DataLineType.GpsOn) == DataLineType.GpsOn)
+                                    lineType = lineType ^ DataLineType.GpsOn;
+                                continue;
+                            }
+                            if (tokens[3] == "ON")
+                            {
+                                AddLineToLocations(database, fileId, lineNumber, null,
+                                    String.Join(" ", tokens.Skip(6).ToArray()));
+                                lineType = lineType | DataLineType.GpsOn;
+                            }
+                            else
+                                throw new FormatException("Unexpected GPS data mode in data table at line " + lineNumber);
+                            break;
+                        }
+                        AddLineToTracking(database, fileId, lineNumber, lineType, tokens);
                         break;
 
                     case ParseState.End:
@@ -200,7 +290,7 @@ namespace SqlServer_Files
                 throw new InvalidDataException("Data file ended prematurely");
         }
 
-        private bool ParseAntennaKeyValue(string line, string antennaType, Dictionary<String, String> attributes)
+        private static bool ParseAntennaKeyValue(string line, string antennaType, Dictionary<String, String> attributes)
         {
             var sentinals = new Dictionary<String, String>
             {
@@ -219,13 +309,13 @@ namespace SqlServer_Files
             return false;
         }
 
-        private bool ParseKeyValue(string line, Dictionary<String, String> attributes)
+        private static bool ParseKeyValue(string line, Dictionary<String, String> attributes)
         {
             var sentinals = new Dictionary<String, String>
             {
                 {"Site number", "Site"},
                 {"Available memory", "Memory"},
-                {"Codeset", "CodeSet"},
+                {"Codeset =", "CodeSet"},
                 {"AGC", "AGC"},
                 {"Scan time =", "ScanTime"},
                 {"Scan delay =", "ScanDelay"},
@@ -234,7 +324,8 @@ namespace SqlServer_Files
                 {"Noise blank level =", "NoiseBlankLevel"},
                 {"Upconverter base frequency =", "UpconverterBaseFrequency"},
                 {"Filter:", "Filter"},
-                {"Echo delay =", "EchoDelay"}
+                {"Echo delay =", "EchoDelay"},
+                {"GPS data mode =", "GpsMode"}
             };
             foreach (KeyValuePair<string, string> sentinal in sentinals)
             {
@@ -247,7 +338,7 @@ namespace SqlServer_Files
             return false;
         }
 
-        private DateTime ParseSrx400DateTime(string text, int lineNumber)
+        private static DateTime ParseSrx400DateTime(string text, int lineNumber)
         {
             try
             {
@@ -269,14 +360,23 @@ namespace SqlServer_Files
             }
         }
 
-        private float? ParseSrx400LatLong(string text, int lineNumber)
+        private static Location ParseSrx400LatLong(string[] tokens, int lineNumber)
         {
+            // input in the following example forms: 
+            //    "60 12 29.8 N 154 17 21.8 W"
+            //    "   N.A.         N.A.      "
+            //    " 0 00 00.0 N 0 00 00.0 E"
             try
             {
-                if (text == "N.A.")
-                    return null;
-                throw new NotImplementedException();
-                return 0.0f;
+
+                if (tokens[0] == "N.A." && tokens[1] == "N.A.")
+                    return new Location {Lat = null, Long = null};
+                if (tokens[0] == "N.A.")
+                    return new Location { Lat = null, Long = BuildLatLong(tokens[1],tokens[2],tokens[3],tokens[4]) };
+                if (tokens[4] == "N.A.")
+                    return new Location { Lat = BuildLatLong(tokens[0], tokens[1], tokens[2], tokens[3]), Long = null };
+                return new Location { Lat  = BuildLatLong(tokens[0], tokens[1], tokens[2], tokens[3]), 
+                                      Long = BuildLatLong(tokens[4], tokens[5], tokens[6], tokens[7]) };
             }
             catch (Exception ex)
             {
@@ -287,7 +387,26 @@ namespace SqlServer_Files
             }
         }
 
-        private IEnumerable<string> GetLines(Byte[] bytes)
+        private static float BuildLatLong(string degrees, string minutes, string seconds, string direction)
+        {
+            int dir = (direction == "N" || direction == "E") ? 1 : ((direction == "W" || direction == "S") ? -1 : 0);
+            if (dir == 0)
+                throw new FormatException("Direction of Lat/Long is not one of N,S,E,W");
+            int d = Int32.Parse(degrees);
+            if ((direction == "N" || direction == "S") && (d < 0 || 90 < d))
+                throw new FormatException("Magnitude of Latitude is invalid. Must be (0..90)");
+            if ((direction == "E" || direction == "W") && (d < 0 || 180 < d))
+                throw new FormatException("Magnitude of Longitude is invalid. Must be (0..180)");
+            int m = Int32.Parse(minutes);
+            if (m < 0 || 60 <= m)
+                throw new FormatException("Magnitude of minutes is invalid. Must be (0..90)");
+            float s = Single.Parse(seconds);
+            if (s < 0 || 60 <= s)
+                throw new FormatException("Magnitude of seconds is invalid. Must be (0..90)");
+            return dir * (d + m / 60.0f + s / 3600f);
+        }
+
+        private static IEnumerable<string> GetLines(Byte[] bytes)
         {
             using (var stream = new MemoryStream(bytes, 0, bytes.Length))
             using (var reader = new StreamReader(stream, Encoding.UTF8))
@@ -295,9 +414,15 @@ namespace SqlServer_Files
                     yield return reader.ReadLine();
         }
 
-        private void ClearDatabase(SqlConnection database, SqlInt32 fileId)
+        private static void ClearDatabase(SqlConnection database, SqlInt32 fileId)
         {
-            foreach (string table in new[] { "TelemetryDataSRX400Channels", "TelemetryDataSRX400Antennas", "TelemetryDataSRX400Tracking", "TelemetryDataSRX400Environment"})
+            foreach (string table in new[]
+            {
+                "TelemetryDataSRX400Antennas",  "TelemetryDataSRX400BatteryStatus",
+                "TelemetryDataSRX400Channels",  "TelemetryDataSRX400Environments",
+                "TelemetryDataSRX400Filters",   "TelemetryDataSRX400Locations",
+                "TelemetryDataSRX400TrackingData"
+            })
             {
                 var sql = "DELETE [dbo].[" + table + "] WHERE FileId = @FileId";
                 using (var command = new SqlCommand(sql, database))
@@ -308,7 +433,7 @@ namespace SqlServer_Files
             }
         }
 
-        private void AddLineToChannels(SqlConnection database, SqlInt32 fileId, int lineNumber, DateTime dateTime, string[] tokens)
+        private static void AddLineToChannels(SqlConnection database, SqlInt32 fileId, int lineNumber, DateTime dateTime, string[] tokens)
         {
             const string sql = "INSERT INTO [dbo].[TelemetryDataSRX400Channels] (FileId, LineNumber, ChangeDate, Channel, Frequency)" +
                                " VALUES (@FileId, @LineNumber, @ChangeDate, @Channel, @Frequency)";
@@ -317,13 +442,22 @@ namespace SqlServer_Files
                 command.Parameters.Add(new SqlParameter("@FileId", SqlDbType.Int) { Value = fileId });
                 command.Parameters.Add(new SqlParameter("@LineNumber", SqlDbType.Int) { Value = lineNumber });
                 command.Parameters.Add(new SqlParameter("@ChangeDate", SqlDbType.DateTime2) { Value = dateTime });
-                command.Parameters.Add(new SqlParameter("@Channel", SqlDbType.Int) { Value = Int32.Parse(tokens[0]) });
-                command.Parameters.Add(new SqlParameter("@Frequency", SqlDbType.Real) { Value = Single.Parse(tokens[1]) });
+                try
+                {
+                    command.Parameters.Add(new SqlParameter("@Channel", SqlDbType.Int) { Value = Int32.Parse(tokens[0]) });
+                    command.Parameters.Add(new SqlParameter("@Frequency", SqlDbType.Real) { Value = Single.Parse(tokens[1]) });
+                }
+                catch (Exception ex)
+                {
+                    if (ex is FormatException || ex is ArgumentNullException || ex is OverflowException)
+                        throw new FormatException("Unable to parse channel data at line " + lineNumber, ex);
+                    throw;
+                }
                 command.ExecuteNonQuery();
             }
         }
 
-        private void AddLineToAntennas(SqlConnection database, SqlInt32 fileId, int lineNumber, DateTime dateTime, string deviceType, string[] tokens)
+        private static void AddLineToAntennas(SqlConnection database, SqlInt32 fileId, int lineNumber, DateTime dateTime, string deviceType, string[] tokens)
         {
             const string sql = "INSERT INTO [dbo].[TelemetryDataSRX400Antennas] (FileId, LineNumber, ChangeDate, DeviceType, DeviceId, Gain)" +
                                " VALUES (@FileId, @LineNumber, @ChangeDate, @DeviceType, @DeviceId, @Gain)";
@@ -333,46 +467,134 @@ namespace SqlServer_Files
                 command.Parameters.Add(new SqlParameter("@LineNumber", SqlDbType.Int) { Value = lineNumber });
                 command.Parameters.Add(new SqlParameter("@ChangeDate", SqlDbType.DateTime2) { Value = dateTime });
                 command.Parameters.Add(new SqlParameter("@DeviceType", SqlDbType.NVarChar) { Value = deviceType });
-                command.Parameters.Add(new SqlParameter("@DeviceId", SqlDbType.Int) { Value = Int32.Parse(tokens[0]) });
-                command.Parameters.Add(new SqlParameter("@Gain", SqlDbType.Int) { Value = Int32.Parse(tokens[1]) });
+                try
+                {
+                    command.Parameters.Add(new SqlParameter("@DeviceId", SqlDbType.Int) { Value = Int32.Parse(tokens[0]) });
+                    command.Parameters.Add(new SqlParameter("@Gain", SqlDbType.Int) { Value = Int32.Parse(tokens[1]) });
+                }
+                catch (Exception ex)
+                {
+                    if (ex is FormatException || ex is ArgumentNullException || ex is OverflowException)
+                        throw new FormatException("Unable to parse antenna data at line " + lineNumber, ex);
+                    throw;
+                }
                 command.ExecuteNonQuery();
             }
         }
 
-        private void AddLineToTracking(SqlConnection database, SqlInt32 fileId, int lineNumber, string line)
+        private void AddLineToFilters(SqlConnection database, SqlInt32 fileId, int lineNumber, DateTime dateTime, string[] tokens)
         {
-            //FIXME - different line types need different processing
-            //FIXME - lat long need special parsing
-            //FIXME - first two tokens need to be combined as one token for date parser
-            //FIXME - build database table
-            string[] tokens = line.Split();
-            const string sql = "INSERT INTO [dbo].[TelemetryDataSRX400Tracking] (FileId, LineNumber, Date, Channel, Code, Antenna, Power, Data, Events, Battery, Latitude, Longitude, StopDate)" +
-                               " VALUES (@FileId, @LineNumber, @Date, @Channel, @Code, @Antenna, @Power, @Data, @Events, @Battery, @Latitude, @Longitude, @StopDate)";
+            const string sql = "INSERT INTO [dbo].[TelemetryDataSRX400Filters] (FileId, LineNumber, ChangeDate, Channel, Code)" +
+                               " VALUES (@FileId, @LineNumber, @ChangeDate, @Channel, @Code)";
             using (var command = new SqlCommand(sql, database))
             {
                 command.Parameters.Add(new SqlParameter("@FileId", SqlDbType.Int) { Value = fileId });
                 command.Parameters.Add(new SqlParameter("@LineNumber", SqlDbType.Int) { Value = lineNumber });
-                command.Parameters.Add(new SqlParameter("@Date", SqlDbType.DateTime) { Value = Int32.Parse(tokens[0]) });
-                command.Parameters.Add(new SqlParameter("@Channel", SqlDbType.Int) { Value = Int32.Parse(tokens[1]) });
-                command.Parameters.Add(new SqlParameter("@Code", SqlDbType.Int) { Value = Int32.Parse(tokens[2]) });
-                command.Parameters.Add(new SqlParameter("@Antenna", SqlDbType.NVarChar) { Value = Int32.Parse(tokens[3]) });
-                command.Parameters.Add(new SqlParameter("@Power", SqlDbType.Int) { Value = Int32.Parse(tokens[4]) });
-                command.Parameters.Add(new SqlParameter("@Data", SqlDbType.Int) { IsNullable = true, Value = tokens[5] == "NA" ? null : (int?)Int32.Parse(tokens[5]) });
-                command.Parameters.Add(new SqlParameter("@Events", SqlDbType.Int) { IsNullable = true, Value = tokens[6] == "N.A." ? null : (int?)Int32.Parse(tokens[6]) });
-                command.Parameters.Add(new SqlParameter("@Battery", SqlDbType.NVarChar) { Value = Int32.Parse(tokens[10]) });
-                command.Parameters.Add(new SqlParameter("@Latitude", SqlDbType.Real) { Value = Single.Parse(tokens[8]) });
-                command.Parameters.Add(new SqlParameter("@Longitude", SqlDbType.Real) { Value = Single.Parse(tokens[9]) });
-                command.Parameters.Add(new SqlParameter("@StopDate", SqlDbType.DateTime) { Value = Int32.Parse(tokens[10]) });
+                command.Parameters.Add(new SqlParameter("@ChangeDate", SqlDbType.DateTime2) { Value = dateTime });
+                try
+                {
+                    command.Parameters.Add(new SqlParameter("@Channel", SqlDbType.Int) { Value = Int32.Parse(tokens[0]) });
+                    command.Parameters.Add(new SqlParameter("@Code", SqlDbType.Int) { Value = Int32.Parse(tokens[1]) });
+                }
+                catch (Exception ex)
+                {
+                    if (ex is FormatException || ex is ArgumentNullException || ex is OverflowException)
+                        throw new FormatException("Unable to parse filter data at line " + lineNumber, ex);
+                    throw;
+                }
                 command.ExecuteNonQuery();
             }
         }
 
-        private void WriteEnvironmentToDatabase(SqlConnection database, SqlInt32 fileId, int lineNumber, DateTime dateTime, Dictionary<String, String> attributes)
+        private static void AddLineToLocations(SqlConnection database, SqlInt32 fileId, int lineNumber, DateTime? changeDateTime, string line)
+        {
+            var location = ParseSrx400LatLong(line.Trim().Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries),
+                lineNumber);
+            const string sql = "INSERT INTO [dbo].[TelemetryDataSRX400Locations] (FileId, LineNumber, ChangeDate, Latitude, Longitude)" +
+                               " VALUES (@FileId, @LineNumber, @ChangeDate, @Latitude, @Longitude)";
+            using (var command = new SqlCommand(sql, database))
+            {
+                command.Parameters.Add(new SqlParameter("@FileId", SqlDbType.Int) { Value = fileId });
+                command.Parameters.Add(new SqlParameter("@LineNumber", SqlDbType.Int) { Value = lineNumber });
+                command.Parameters.Add(new SqlParameter("@ChangeDate", SqlDbType.DateTime2) { IsNullable = true, Value = changeDateTime });
+                command.Parameters.Add(new SqlParameter("@Latitude", SqlDbType.Real) { IsNullable = true, Value = location.Lat });
+                command.Parameters.Add(new SqlParameter("@Longitude", SqlDbType.Real) { IsNullable = true, Value = location.Long });
+                command.ExecuteNonQuery();
+            }
+        }
+
+        private static void AddLineToBatteryStatus(SqlConnection database, SqlInt32 fileId, int lineNumber, DateTime dateTime, string status)
+        {
+            const string sql = "INSERT INTO [dbo].[TelemetryDataSRX400BatteryStatus] (FileId, LineNumber, TimeStamp, Status)" +
+                               " VALUES (@FileId, @LineNumber, @TimeStamp, @Status)";
+            using (var command = new SqlCommand(sql, database))
+            {
+                command.Parameters.Add(new SqlParameter("@FileId", SqlDbType.Int) { Value = fileId });
+                command.Parameters.Add(new SqlParameter("@LineNumber", SqlDbType.Int) { Value = lineNumber });
+                command.Parameters.Add(new SqlParameter("@TimeStamp", SqlDbType.DateTime2) { Value = dateTime });
+                command.Parameters.Add(new SqlParameter("@Status", SqlDbType.NVarChar) { Value = status });
+                command.ExecuteNonQuery();
+            }
+        }
+
+        private static void AddLineToTracking(SqlConnection database, SqlInt32 fileId, int lineNumber, DataLineType lineType, string[] tokens)
+        {
+            try
+            {
+                int inc1 = 0; //additional increment for lines that have a data Attribute
+                int inc2 = 0; //additional increment for lines that have a data Attribute and stop date
+                var startDate = ParseSrx400DateTime(tokens[0] + " " + tokens[1], lineNumber);
+                string data = null;
+                if ((lineType & DataLineType.HasDataAttribute) == DataLineType.HasDataAttribute)
+                {
+                    data = tokens[6];
+                    inc1 = 1;
+                }
+                DateTime? stopDate = null;
+                if ((lineType & DataLineType.HasStopDate) == DataLineType.HasStopDate ||
+                    (lineType & DataLineType.GpsOn) == 0)
+                {
+                    stopDate = ParseSrx400DateTime(tokens[7 + inc1] + " " + tokens[8 + inc1], lineNumber);
+                    inc2 = 2;
+                }
+                var latLong = new Location { Lat = null, Long = null };
+                if ((lineType & DataLineType.HasLatLong) == DataLineType.HasLatLong &&
+                    (lineType & DataLineType.GpsOn) == DataLineType.GpsOn)
+                {
+                    latLong = ParseSrx400LatLong(tokens.Skip(7 + inc1 + inc2).ToArray(), lineNumber);
+                }
+                const string sql = "INSERT INTO [dbo].[TelemetryDataSRX400TrackingData] (FileId, LineNumber, Date, Channel, Code, Antenna, Power, Data, Events, Latitude, Longitude, StopDate)" +
+                                   " VALUES (@FileId, @LineNumber, @Date, @Channel, @Code, @Antenna, @Power, @Data, @Events, @Latitude, @Longitude, @StopDate)";
+                using (var command = new SqlCommand(sql, database))
+                {
+                    command.Parameters.Add(new SqlParameter("@FileId", SqlDbType.Int) { Value = fileId });
+                    command.Parameters.Add(new SqlParameter("@LineNumber", SqlDbType.Int) { Value = lineNumber });
+                    command.Parameters.Add(new SqlParameter("@Date", SqlDbType.DateTime2) { Value = startDate });
+                    command.Parameters.Add(new SqlParameter("@Channel", SqlDbType.Int) { Value = Int32.Parse(tokens[2]) });
+                    command.Parameters.Add(new SqlParameter("@Code", SqlDbType.Int) { Value = Int32.Parse(tokens[3]) });
+                    command.Parameters.Add(new SqlParameter("@Antenna", SqlDbType.NVarChar) { Value = tokens[4] });
+                    command.Parameters.Add(new SqlParameter("@Power", SqlDbType.Int) { Value = Int32.Parse(tokens[5]) });
+                    command.Parameters.Add(new SqlParameter("@Data", SqlDbType.NVarChar) { IsNullable = true, Value = data });
+                    command.Parameters.Add(new SqlParameter("@Events", SqlDbType.Int) { Value = Int32.Parse(tokens[6 + inc1]) });
+                    command.Parameters.Add(new SqlParameter("@Latitude", SqlDbType.Real) { IsNullable = true, Value = latLong.Lat });
+                    command.Parameters.Add(new SqlParameter("@Longitude", SqlDbType.Real) { IsNullable = true, Value = latLong.Long });
+                    command.Parameters.Add(new SqlParameter("@StopDate", SqlDbType.DateTime) { IsNullable = true, Value = stopDate });
+                    command.ExecuteNonQuery();
+                }
+            }
+            catch (IndexOutOfRangeException)
+            {
+                throw new FormatException("Unexpected token count ("+tokens.Length+") in line "+lineNumber +". Flags = "+ lineType);
+            }
+
+        }
+
+        private static void WriteEnvironmentToDatabase(SqlConnection database, SqlInt32 fileId, int lineNumber, DateTime dateTime, Dictionary<String, String> attributes)
         {
             if (attributes.Count == 0)
                 throw new InvalidDataException("There are environment settings for the change at line " + lineNumber);
 
-            var sql = "INSERT INTO [dbo].[TelemetryDataSRX400Environment] (FileId, LineNumber, ChangeDate, " +
+            var sql = "INSERT INTO [dbo].[TelemetryDataSRX400Environments] (FileId, LineNumber, ChangeDate, " +
                       String.Join(", ", attributes.Keys.ToArray()) + ")" +
                       " VALUES (@FileId, @LineNumber, @ChangeDate, @" +
                       String.Join(", @", attributes.Keys.ToArray()) + ")";
