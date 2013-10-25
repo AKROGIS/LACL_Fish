@@ -250,7 +250,7 @@ namespace SqlServer_Files
                             }
                             break;
                         }
-                        if (tokens[2] == "Battery")
+                        if (tokens.Length > 2 && tokens[2] == "Battery")
                         {
                             AddLineToBatteryStatus(database, fileId, lineNumber,
                                 ParseSrx400DateTime(tokens[0] + " " + tokens[1], lineNumber), tokens[3]);
