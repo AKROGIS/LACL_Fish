@@ -5,8 +5,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileUploader", "FileUploade
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataModel", "DataModel\DataModel.csproj", "{C57BD862-C33D-40A5-8000-1197CDA12A9E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "filefilter", "filefilter\filefilter.csproj", "{0FA2A2CC-B22D-41EB-A76A-28E04AA350E0}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqlServer_Functions", "SqlServer_Functions\SqlServer_Functions.csproj", "{6DC59D4D-BD72-4AF1-88FA-4E96C8818966}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqlServer_Files", "SqlServer_Files\SqlServer_Files.csproj", "{DBE62DDD-8B81-4C7C-970F-AC171C97B42A}"
@@ -41,16 +39,6 @@ Global
 		{C57BD862-C33D-40A5-8000-1197CDA12A9E}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{C57BD862-C33D-40A5-8000-1197CDA12A9E}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{C57BD862-C33D-40A5-8000-1197CDA12A9E}.Release|x86.ActiveCfg = Release|Any CPU
-		{0FA2A2CC-B22D-41EB-A76A-28E04AA350E0}.Debug|Any CPU.ActiveCfg = Debug|x86
-		{0FA2A2CC-B22D-41EB-A76A-28E04AA350E0}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
-		{0FA2A2CC-B22D-41EB-A76A-28E04AA350E0}.Debug|Mixed Platforms.Build.0 = Debug|x86
-		{0FA2A2CC-B22D-41EB-A76A-28E04AA350E0}.Debug|x86.ActiveCfg = Debug|x86
-		{0FA2A2CC-B22D-41EB-A76A-28E04AA350E0}.Debug|x86.Build.0 = Debug|x86
-		{0FA2A2CC-B22D-41EB-A76A-28E04AA350E0}.Release|Any CPU.ActiveCfg = Release|x86
-		{0FA2A2CC-B22D-41EB-A76A-28E04AA350E0}.Release|Mixed Platforms.ActiveCfg = Release|x86
-		{0FA2A2CC-B22D-41EB-A76A-28E04AA350E0}.Release|Mixed Platforms.Build.0 = Release|x86
-		{0FA2A2CC-B22D-41EB-A76A-28E04AA350E0}.Release|x86.ActiveCfg = Release|x86
-		{0FA2A2CC-B22D-41EB-A76A-28E04AA350E0}.Release|x86.Build.0 = Release|x86
 		{6DC59D4D-BD72-4AF1-88FA-4E96C8818966}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{6DC59D4D-BD72-4AF1-88FA-4E96C8818966}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6DC59D4D-BD72-4AF1-88FA-4E96C8818966}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
