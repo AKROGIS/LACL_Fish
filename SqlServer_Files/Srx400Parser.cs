@@ -358,7 +358,7 @@ namespace SqlServer_Files
             {
                 if (ex is ArgumentOutOfRangeException || ex is FormatException ||
                     ex is ArgumentNullException || ex is OverflowException)
-                    throw new FormatException(String.Format("Date/Time format is unrecognized at line {0}", lineNumber), ex);
+                    throw new FormatException("Date/Time (" + text + ") is unrecognized at line " + lineNumber, ex);
                 throw;
             }
         }
@@ -560,7 +560,7 @@ namespace SqlServer_Files
                     inc2 = 1;
                 }
                 DateTime? stopDate = null;
-                if ((lineType & DataLineDetails.HeaderHasStopDate) == DataLineDetails.HeaderHasStopDate ||
+                if ((lineType & DataLineDetails.HeaderHasStopDate) == DataLineDetails.HeaderHasStopDate &&
                     (lineType & DataLineDetails.GpsModeIsOn) == 0)
                 {
                     stopDate = ParseSrx400DateTime(tokens[7 + inc1 + inc2] + " " + tokens[8 + inc1 + inc2], lineNumber);
