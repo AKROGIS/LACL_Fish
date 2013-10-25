@@ -541,8 +541,9 @@ namespace SqlServer_Files
         {
             try
             {
-                int inc1 = 0; //additional increment for lines that have a data Attribute
-                int inc2 = 0; //additional increment for lines that have a data Attribute and stop date
+                int inc1 = 0; //additional increment for lines that have a data attribute
+                int inc2 = 0; //additional increment for lines that have a sensor attribute
+                int inc3 = 0; //additional increment for lines that have a stop date
                 var startDate = ParseSrx400DateTime(tokens[0] + " " + tokens[1], lineNumber);
                 string data = null;
                 if ((lineType & DataLineType.HasDataAttribute) == DataLineType.HasDataAttribute)
@@ -550,21 +551,26 @@ namespace SqlServer_Files
                     data = tokens[6];
                     inc1 = 1;
                 }
+                if ((lineType & DataLineType.HasSensorAttribute) == DataLineType.HasSensorAttribute)
+                {
+                    data = tokens[6+inc1];
+                    inc2 = 1;
+                }
                 DateTime? stopDate = null;
                 if ((lineType & DataLineType.HasStopDate) == DataLineType.HasStopDate ||
                     (lineType & DataLineType.GpsOn) == 0)
                 {
-                    stopDate = ParseSrx400DateTime(tokens[7 + inc1] + " " + tokens[8 + inc1], lineNumber);
-                    inc2 = 2;
+                    stopDate = ParseSrx400DateTime(tokens[7 + inc1 + inc2] + " " + tokens[8 + inc1 + inc2], lineNumber);
+                    inc3 = 2;
                 }
                 var latLong = new Location { Lat = null, Long = null };
                 if ((lineType & DataLineType.HasLatLong) == DataLineType.HasLatLong &&
                     (lineType & DataLineType.GpsOn) == DataLineType.GpsOn)
                 {
-                    latLong = ParseSrx400LatLong(tokens.Skip(7 + inc1 + inc2).ToArray(), lineNumber);
+                    latLong = ParseSrx400LatLong(tokens.Skip(7 + inc1 + inc2 + inc3).ToArray(), lineNumber);
                 }
-                const string sql = "INSERT INTO [dbo].[TelemetryDataSRX400TrackingData] (FileId, LineNumber, Date, Channel, Code, Antenna, Power, Data, Events, Latitude, Longitude, StopDate)" +
-                                   " VALUES (@FileId, @LineNumber, @Date, @Channel, @Code, @Antenna, @Power, @Data, @Events, @Latitude, @Longitude, @StopDate)";
+                const string sql = "INSERT INTO [dbo].[TelemetryDataSRX400TrackingData] (FileId, LineNumber, Date, Channel, Code, Antenna, Power, Data, Sensor, Events, Latitude, Longitude, StopDate)" +
+                                   " VALUES (@FileId, @LineNumber, @Date, @Channel, @Code, @Antenna, @Power, @Data, @Sensor, @Events, @Latitude, @Longitude, @StopDate)";
                 using (var command = new SqlCommand(sql, database))
                 {
                     command.Parameters.Add(new SqlParameter("@FileId", SqlDbType.Int) { Value = fileId });
@@ -575,7 +581,8 @@ namespace SqlServer_Files
                     command.Parameters.Add(new SqlParameter("@Antenna", SqlDbType.NVarChar) { Value = tokens[4] });
                     command.Parameters.Add(new SqlParameter("@Power", SqlDbType.Int) { Value = Int32.Parse(tokens[5]) });
                     command.Parameters.Add(new SqlParameter("@Data", SqlDbType.NVarChar) { IsNullable = true, Value = data });
-                    command.Parameters.Add(new SqlParameter("@Events", SqlDbType.Int) { Value = Int32.Parse(tokens[6 + inc1]) });
+                    command.Parameters.Add(new SqlParameter("@Sensor", SqlDbType.NVarChar) { IsNullable = true, Value = data });
+                    command.Parameters.Add(new SqlParameter("@Events", SqlDbType.Int) { Value = Int32.Parse(tokens[6 + inc1 + inc2]) });
                     command.Parameters.Add(new SqlParameter("@Latitude", SqlDbType.Real) { IsNullable = true, Value = latLong.Lat });
                     command.Parameters.Add(new SqlParameter("@Longitude", SqlDbType.Real) { IsNullable = true, Value = latLong.Long });
                     command.Parameters.Add(new SqlParameter("@StopDate", SqlDbType.DateTime) { IsNullable = true, Value = stopDate });
