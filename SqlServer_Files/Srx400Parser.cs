@@ -45,13 +45,13 @@ namespace SqlServer_Files
         }
 
         [Flags]
-        enum DataLineType
+        enum DataLineDetails
         {
-            HasLatLong       = 1,
-            HasStopDate      = 2,
-            HasDataAttribute = 4,
+            HeaderHasLatLong   = 1,
+            HeaderHasStopDate  = 2,
+            HasDataAttribute   = 4,
             HasSensorAttribute = 8,
-            GpsOn = 16,
+            GpsModeIsOn        = 16,
         }
 
         private struct Location
@@ -67,7 +67,7 @@ namespace SqlServer_Files
             var changeDateTime = new DateTime();
             int changeLineNumber = 0;
             bool haveScanTable = false;
-            DataLineType lineType = 0;
+            DataLineDetails lineType = 0;
             var environment = new Dictionary<string, string>();
             int lineNumber = 2;
             foreach (var line in GetLines(_bytes).Skip(lineNumber))
@@ -226,27 +226,27 @@ namespace SqlServer_Files
                         var tokens = line.Trim().Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries);
                         if (tokens.Length == 2 && tokens[0] == "Start")
                         {
-                            lineType = lineType | DataLineType.HasStopDate;
+                            lineType = lineType | DataLineDetails.HeaderHasStopDate;
                             continue;
                         }
                         if (tokens.Length == 2 && tokens[0] == "Latitude")
                         {
-                            lineType = lineType | DataLineType.HasLatLong;
+                            lineType = lineType | DataLineDetails.HeaderHasLatLong;
                             continue;
                         }
                         if (tokens[0] == "Date")
                         {
                             if (tokens[6] == "Data")
                             {
-                                lineType = lineType | DataLineType.HasDataAttribute;
+                                lineType = lineType | DataLineDetails.HasDataAttribute;
                             }
                             if (tokens[6] == "Sensor" || tokens[7] == "Sensor")
                             {
-                                lineType = lineType | DataLineType.HasSensorAttribute;
+                                lineType = lineType | DataLineDetails.HasSensorAttribute;
                             }
                             if (tokens[tokens.Length-1] == "Longitude")
                             {
-                                lineType = lineType | DataLineType.HasLatLong;
+                                lineType = lineType | DataLineDetails.HeaderHasLatLong;
                             }
                             break;
                         }
@@ -260,15 +260,15 @@ namespace SqlServer_Files
                         {
                             if (tokens[3] == "OFF")
                             {
-                                if ((lineType & DataLineType.GpsOn) == DataLineType.GpsOn)
-                                    lineType = lineType ^ DataLineType.GpsOn;
+                                if ((lineType & DataLineDetails.GpsModeIsOn) == DataLineDetails.GpsModeIsOn)
+                                    lineType = lineType ^ DataLineDetails.GpsModeIsOn;
                                 continue;
                             }
                             if (tokens[3] == "ON")
                             {
                                 AddLineToLocations(database, fileId, lineNumber, null,
                                     String.Join(" ", tokens.Skip(6).ToArray()));
-                                lineType = lineType | DataLineType.GpsOn;
+                                lineType = lineType | DataLineDetails.GpsModeIsOn;
                             }
                             else
                                 throw new FormatException("Unexpected GPS data mode in data table at line " + lineNumber);
@@ -537,7 +537,7 @@ namespace SqlServer_Files
             }
         }
 
-        private static void AddLineToTracking(SqlConnection database, SqlInt32 fileId, int lineNumber, DataLineType lineType, string[] tokens)
+        private static void AddLineToTracking(SqlConnection database, SqlInt32 fileId, int lineNumber, DataLineDetails lineType, string[] tokens)
         {
             try
             {
@@ -546,26 +546,26 @@ namespace SqlServer_Files
                 int inc3 = 0; //additional increment for lines that have a stop date
                 var startDate = ParseSrx400DateTime(tokens[0] + " " + tokens[1], lineNumber);
                 string data = null;
-                if ((lineType & DataLineType.HasDataAttribute) == DataLineType.HasDataAttribute)
+                if ((lineType & DataLineDetails.HasDataAttribute) == DataLineDetails.HasDataAttribute)
                 {
                     data = tokens[6];
                     inc1 = 1;
                 }
-                if ((lineType & DataLineType.HasSensorAttribute) == DataLineType.HasSensorAttribute)
+                if ((lineType & DataLineDetails.HasSensorAttribute) == DataLineDetails.HasSensorAttribute)
                 {
                     data = tokens[6+inc1];
                     inc2 = 1;
                 }
                 DateTime? stopDate = null;
-                if ((lineType & DataLineType.HasStopDate) == DataLineType.HasStopDate ||
-                    (lineType & DataLineType.GpsOn) == 0)
+                if ((lineType & DataLineDetails.HeaderHasStopDate) == DataLineDetails.HeaderHasStopDate ||
+                    (lineType & DataLineDetails.GpsModeIsOn) == 0)
                 {
                     stopDate = ParseSrx400DateTime(tokens[7 + inc1 + inc2] + " " + tokens[8 + inc1 + inc2], lineNumber);
                     inc3 = 2;
                 }
                 var latLong = new Location { Lat = null, Long = null };
-                if ((lineType & DataLineType.HasLatLong) == DataLineType.HasLatLong &&
-                    (lineType & DataLineType.GpsOn) == DataLineType.GpsOn)
+                if ((lineType & DataLineDetails.HeaderHasLatLong) == DataLineDetails.HeaderHasLatLong &&
+                    (lineType & DataLineDetails.GpsModeIsOn) == DataLineDetails.GpsModeIsOn)
                 {
                     latLong = ParseSrx400LatLong(tokens.Skip(7 + inc1 + inc2 + inc3).ToArray(), lineNumber);
                 }
