@@ -398,14 +398,14 @@ namespace SqlServer_Files
             int d = Int32.Parse(degrees);
             if ((direction == "N" || direction == "S") && (d < 0 || 90 < d))
                 throw new FormatException("Magnitude of Latitude is invalid. Must be (0..90)");
-            if ((direction == "E" || direction == "W") && (d < 0 || 180 < d))
-                throw new FormatException("Magnitude of Longitude is invalid. Must be (0..180)");
+            if ((direction == "E" || direction == "W") && (d < 0 || 360 < d))
+                throw new FormatException("Magnitude of Longitude is invalid. Must be (0..360)");
             int m = Int32.Parse(minutes);
             if (m < 0 || 60 <= m)
-                throw new FormatException("Magnitude of minutes is invalid. Must be (0..90)");
+                throw new FormatException("Magnitude of minutes is invalid. Must be (0..60]");
             float s = Single.Parse(seconds);
             if (s < 0 || 60 <= s)
-                throw new FormatException("Magnitude of seconds is invalid. Must be (0..90)");
+                throw new FormatException("Magnitude of seconds is invalid. Must be (0..60]");
             return dir * (d + m / 60.0f + s / 3600f);
         }
 
