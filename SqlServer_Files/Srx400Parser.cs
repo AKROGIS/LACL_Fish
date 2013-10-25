@@ -16,7 +16,7 @@ namespace SqlServer_Files
         public Srx400Parser(Byte[] bytes)
         {
             if (bytes == null || bytes.Length == 0)
-                throw new ArgumentNullException("bytes", "byte array must not be null or empty");
+                throw new ArgumentNullException(null,"File is empty");
             _bytes = bytes;
         }
 
@@ -108,8 +108,11 @@ namespace SqlServer_Files
                         }
                         if (line.StartsWith("Filter:"))
                         {
-                            state = ParseState.FilterDetails;
                             ParseKeyValue(line, environment);
+                            if (line.StartsWith("Filter: Channel & Code"))
+                            {
+                                state = ParseState.FilterDetails;
+                            }
                             break;
                         }
                         if (line.StartsWith("GPS data mode ="))
