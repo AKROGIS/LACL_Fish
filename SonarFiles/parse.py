@@ -333,5 +333,5 @@ def main(source, do_test=True, do_save=False, server='inpakrovmais', db='Fish_Ta
 if __name__ == '__main__':
     #main(r"C:\tmp\LACL_Sonar\Newhalen\2018\FC_2018-08-11_110000_LF.txt", do_test=False, do_save=True)
     #main(r"C:\tmp\LACL_Sonar\Chulitna\2015")
-    #main(r"C:\tmp\LACL_Sonar", do_test=True)
-    main(r"C:\tmp\LACL_Sonar", do_test=False, do_save=True)
+    main(r"C:\tmp\LACL_Sonar", do_test=True)
+    #main(r"C:\tmp\LACL_Sonar", do_test=False, do_save=True)
