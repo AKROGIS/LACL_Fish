@@ -67,6 +67,7 @@ FIELD_NAMES = {
 }
 
 def parse_header(file_handle, file_data):
+    found_end = False
     line_count = 0
     for line in file_handle:
         line = line.strip()
@@ -166,7 +167,7 @@ def print_key_errors(data):
     keys = set([])
     for file in data:
         for key in data[file]:
-            if key not in WELL_KNOWN_KEYS:
+            if key not in WELL_KNOWN_KEYS and key != 'error':
                 keys.add(key)
     if keys:
         print("UNKNOWN KEYS: {0}".format(keys))
@@ -302,7 +303,7 @@ def save(data, conn):
             print('Error for {0}: {1}'.format(file_name, error_message))
 
 
-def main(source, do_test=True, do_save=False, server='inpakrovmais', db='Fish_Tagging'):
+def main(source, do_test=True, do_save=False, server='inpakrovmais', db='LACL_Fish'):
     conn = None
     if do_save:
         try:
@@ -333,5 +334,5 @@ def main(source, do_test=True, do_save=False, server='inpakrovmais', db='Fish_Ta
 if __name__ == '__main__':
     #main(r"C:\tmp\LACL_Sonar\Newhalen\2018\FC_2018-08-11_110000_LF.txt", do_test=False, do_save=True)
     #main(r"C:\tmp\LACL_Sonar\Chulitna\2015")
-    main(r"C:\tmp\LACL_Sonar", do_test=True)
-    #main(r"C:\tmp\LACL_Sonar", do_test=False, do_save=True)
+    main(r"C:\tmp\pds\2019_Sonar_Counts", do_test=True)
+    #main(r"C:\tmp\pds\2019_Sonar_Counts", do_test=False, do_save=True)
