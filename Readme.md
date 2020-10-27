@@ -22,10 +22,11 @@ resulting from the processing of the files.  This project was modeled on the
 [Animal Movements Database](https://github.com/regan-sarwas/AnimalMovement).
 
 The C# solution and most of the files/folders are part of this phase.
-It is also created the majority of the
+It also created the majority of the
 [database objects](https://github.com/regan-sarwas/FishTagging/tree/master/Database/Database%20Schema.sql).
 This phase provides a simple WinForms GUI app 
-([FileUploader project](https://github.com/regan-sarwas/FishTagging/tree/master/FileUploader)) for uploading files to the database.
+([FileUploader project](https://github.com/regan-sarwas/FishTagging/tree/master/FileUploader)) for uploading files to the database and reviewing the files
+(and thier contents).
 It requires one library project
 [DataModel](https://github.com/regan-sarwas/FishTagging/tree/master/DataModel).
 
@@ -57,9 +58,7 @@ were provided to analyze the data and visualize it in ArcMap.  It has not been
 updated since 2014.
 
 **NOTE** This phase was never fully automated.  Some of the processing was done manually
-with the queries found [here](https://github.com/regan-sarwas/FishTagging/tree/master/Database/Helpful%20Queries.sql).  The FileUploader app will need to update
-the connection string (in DataModel/app.config) to account for changes in the
-server name and database name since the original development.
+with the queries found [here](https://github.com/regan-sarwas/FishTagging/tree/master/Database/Helpful%20Queries.sql).
 
 ### Phase 1 Database objects
 
