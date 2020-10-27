@@ -1,7 +1,7 @@
 
-DROP TABLE SonarCountFileSummaries
-DROP TABLE SonarCountFileCounts
-DROP TABLE SonarCountFiles
+--DROP TABLE SonarCountFileSummaries
+--DROP TABLE SonarCountFileCounts
+--DROP TABLE SonarCountFiles
 GO
 
 CREATE TABLE SonarCountFiles (

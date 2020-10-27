@@ -1,7 +1,7 @@
 
-DROP TABLE SonarCountFiles
-DROP TABLE SonarCountFileSummaries
-DROP TABLE SonarCountFileCounts
+--DROP TABLE SonarCountFiles
+--DROP TABLE SonarCountFileSummaries
+--DROP TABLE SonarCountFileCounts
 
 CREATE TABLE SonarCountFiles (
 	Sonar_Count_File_ID  int IDENTITY(1,1) NOT FOR REPLICATION NOT NULL,
