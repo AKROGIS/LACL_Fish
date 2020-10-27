@@ -109,7 +109,7 @@ The text files are processed by a Python script and the data is loaded into
 the three `SonarCount*` tables.  All of the files for this phase are in the
 [SonarFiles](https://github.com/regan-sarwas/FishTagging/tree/master/SonarFiles) folder.
 
-I recall this phase begain in 2018 with an intial upload of dat from 2016-2018.
+I recall this phase begain in 2018 with an intial upload of data from 2016-2018.
 Updates were done with data collected in 2019 and then again in 2020.
 
 Every year, a folder of files is provided by LACL (James Kramer in 2020).
@@ -161,15 +161,36 @@ and SQL queries.
 ## Phase 3 (Escapement)
 
 This project is derived from a spreadsheet created each year that captures
-the manual excapement counts from observers in two fish counting towers.
+the manual excapement counts from observers in the Newhalen fish counting tower.
 The data has been binned into time intervals for most days during the summer.
 
-This spreadsheet was converted to CSV and upload into the `Escapements`
+The initial spreadsheet was converted to CSV and upload into the `Escapements`
 table.  Each year a new spreadsheet is provided and it is appended to the
-table with the same process.
+table with the same process.  It may be necessary to adjust the layout and formatting
+of the excel file before exporting to CSV, so that the CSV file creates the
+same schema.  I suggest loading into a test table to ensure a compatible
+schema before appending the test table into the `Escapements` table.
+Azure Data Studio and Sql Server Management Studio have tools to load a CSV
+file into a new table in SQL server.  You can check for Primary Key violations
+before appending with something like
+`Select Location, DateStamp, Hour, count(*) from Escape2020 group by Location, DateStamp, Hour having count(*) > 1`
+Then use a command like 
+`INSERT INTO Escapements SELECT * FROM Escape2020`
 
 Once the data is loaded the LACL staff access the data directly using `Azure DataStudio`
 and SQL queries.
+
+### Phase 2 Project Files
+All Project Files are in the
+[Escapement](https://github.com/regan-sarwas/FishTagging/tree/master/Escapements)
+folder.
+
+* `build_db.sql` - An SQL script recreate an empty `Escapements`.
+  This is no longer needed, unless the database is recreated from scratch.
+* `LACL_Tower_vs_Sonar_Counts.sql` - A request query that Compares the
+  sonar data (phase2) with the escapement data.  See the comments in the file
+  for details.
+  
 
 ### Phase 3 Database objects
 #### Tables
