@@ -19,20 +19,20 @@ This was the original 2014 project. It loaded and processed different data files
 from several RFID sensors that collected data on RFID tagged fish. The raw
 files are stored in the database as well as data tables and location data
 resulting from the processing of the files.  This project was modeled on the
-[Animal Movements Database](https://github.com/regan-sarwas/AnimalMovement).
+[Animal Movements Database](https://github.com/AKROGIS/AnimalMovement).
 
 The C# solution and most of the files/folders are part of this phase.
 It also created the majority of the
-[database objects](https://github.com/regan-sarwas/FishTagging/tree/master/Database/Database%20Schema.sql).
+[database objects](https://github.com/AKROGIS/LACL_Fish/tree/master/Database/Database%20Schema.sql).
 This phase provides a simple WinForms GUI app 
-([FileUploader project](https://github.com/regan-sarwas/FishTagging/tree/master/FileUploader)) for uploading files to the database and reviewing the files
+([FileUploader project](https://github.com/AKROGIS/LACL_Fish/tree/master/FileUploader)) for uploading files to the database and reviewing the files
 (and thier contents).
 It requires one library project
-[DataModel](https://github.com/regan-sarwas/FishTagging/tree/master/DataModel).
+[DataModel](https://github.com/AKROGIS/LACL_Fish/tree/master/DataModel).
 
 There are also two SQL CLR projects (to load custom functions into the SQL Server database)
 
-* [SqlServer_Files](https://github.com/regan-sarwas/FishTagging/tree/master/SqlServer_Files).
+* [SqlServer_Files](https://github.com/AKROGIS/LACL_Fish/tree/master/SqlServer_Files).
   This project creates an SQL Asssembly for a Store Procedure called
   `dbo.ProcessRawDataFIle` which takes a `FileId` from the `dbo.RawDataFiles`
   and process the file contents in the blob column into tabular data in the
@@ -41,7 +41,7 @@ There are also two SQL CLR projects (to load custom functions into the SQL Serve
   see the Animal Movements repo for instructions on loading the compiled
   assembly into the database and creating the Stored Procedure that calls it.
 
-* [SqlServer_Functions](https://github.com/regan-sarwas/FishTagging/tree/master/SqlServer_Functions).
+* [SqlServer_Functions](https://github.com/AKROGIS/LACL_Fish/tree/master/SqlServer_Functions).
   This project creates an SQL Asssembly for several scalar valued functions
   (`dbo.DateTimeFromAts`, `dbo.DateTimeFromAtsWithSeconds`, `dbo.LocalTime`,
   `dbo.Sha1Hash` and `dbo.UtcTime`) that are called
@@ -53,12 +53,12 @@ There are also two SQL CLR projects (to load custom functions into the SQL Serve
   assembly into the database and creating the Stored Procedure that calls it.
 
 Data files provided by Dan Young were loaded into the database, and a number of 
-[queries](https://github.com/regan-sarwas/FishTagging/tree/master/Database/Helpful%20Queries.sql)
+[queries](https://github.com/AKROGIS/LACL_Fish/tree/master/Database/Helpful%20Queries.sql)
 were provided to analyze the data and visualize it in ArcMap.  It has not been
 updated since 2014.
 
 **NOTE** This phase was never fully automated.  Some of the processing was done manually
-with the queries found [here](https://github.com/regan-sarwas/FishTagging/tree/master/Database/Helpful%20Queries.sql).
+with the queries found [here](https://github.com/AKROGIS/LACL_Fish/tree/master/Database/Helpful%20Queries.sql).
 
 ### Phase 1 Database objects
 
@@ -97,7 +97,7 @@ with the queries found [here](https://github.com/regan-sarwas/FishTagging/tree/m
 
 #### Views
 * LocationsWithFileError - Location data suitable for ArcGIS
-Also see these [queries](https://github.com/regan-sarwas/FishTagging/tree/master/Database/Helpful%20Queries.sql)
+Also see these [queries](https://github.com/AKROGIS/LACL_Fish/tree/master/Database/Helpful%20Queries.sql)
 
 
 ## Phase 2 (Sonar)
@@ -106,7 +106,7 @@ This phase added sonar data files to the LACL Fish database.  These files are
 text output from a manual review process of raw sonar data by a technician.
 The text files are processed by a Python script and the data is loaded into
 the three `SonarCount*` tables.  All of the files for this phase are in the
-[SonarFiles](https://github.com/regan-sarwas/FishTagging/tree/master/SonarFiles) folder.
+[SonarFiles](https://github.com/AKROGIS/LACL_Fish/tree/master/SonarFiles) folder.
 
 I recall this phase begain in 2018 with an intial upload of data from 2016-2018.
 Updates were done with data collected in 2019 and then again in 2020.
@@ -181,7 +181,7 @@ and SQL queries.
 
 ### Phase 2 Project Files
 All Project Files are in the
-[Escapement](https://github.com/regan-sarwas/FishTagging/tree/master/Escapements)
+[Escapement](https://github.com/AKROGIS/LACL_Fish/tree/master/Escapements)
 folder.
 
 * `build_db.sql` - An SQL script recreate an empty `Escapements`.
