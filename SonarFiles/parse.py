@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-'''
+"""
 Reads a file (or folder of files recursively) of Sonar data from a 
 XXX Hardware/software data collector
 and stores the file (as a blob) and all of the file's data in three
@@ -27,7 +27,7 @@ db='LACL_Fish'.
 
 This script was written for python 2.7 and has an external dependency on
 the **pyodbc** python module. It can be installed with **pip install pyodbc**
-'''
+"""
 
 from __future__ import print_function
 
@@ -44,50 +44,97 @@ BODY_HEADER_3 = ['File', 'Total', 'Mark', 'Frame#', 'Dir', 'R (m)', 'Theta', 'L(
 BODY_HEADER_4 = ['File', 'Total', 'Mark', 'Frame#', 'Dir', 'R (m)', 'Theta', 'L(frm)', 'dR(cm)', 'L/dR', 'Aspect', 'Track',   'Time', 'Date', 'Latitude', 'Longitude', 'Pan', 'Tilt', 'Roll']
 BODY_HEADER_5 = ['File', 'Total',         'Frame#', 'Dir', 'R (m)', 'Theta', 'L(cm)',   'T(cm)', 'L/T',  'Aspect',            'Time', 'Date', 'Latitude', 'Longitude', 'Pan', 'Tilt', 'Roll', 'Species', 'Motion', 'Q', 'N', 'Comment']
 BODY_HEADER_6 = ['File', 'Total',         'Frame#', 'Dir', 'R (m)', 'Theta', 'L(cm)',  'dR(cm)', 'L/dR', 'Aspect',            'Time', 'Date', 'Latitude', 'Longitude', 'Pan', 'Tilt', 'Roll', 'Species', 'Motion', 'Q', 'N', 'Comment']
-WELL_KNOWN_HEADERS = [BODY_HEADER_1, BODY_HEADER_2, BODY_HEADER_3, BODY_HEADER_4, BODY_HEADER_5, BODY_HEADER_6]
+WELL_KNOWN_HEADERS = [
+    BODY_HEADER_1,
+    BODY_HEADER_2,
+    BODY_HEADER_3,
+    BODY_HEADER_4,
+    BODY_HEADER_5,
+    BODY_HEADER_6,
+]
 
 # These are the names of the various key/value pairs found
 # above and below the tabular section in the initial data load.
 # New keys can be added as needed, but will require adding
 # new columns to the database.
-WELL_KNOWN_KEYS = ['Alpha', 'Average N Beams', 'Background Subtraction', 'Cluster Area', 'Convolve Beams', 'Convolve Samps', 'Count  File Name', 'Detect Motion', 'Downstream', 'Echo Detect Angle', 'Editor ID', 'Factor A', 'Factor C', 'Intensity', 'Log Multiplier', 'Max Count Angle', 'Max Count Range', 'Max Process Frame', 'Min Count Angle', 'Min Count Range', 'Min Process Frame', 'Min Threshold', 'Min Track Size', 'Sidestream', 'Smooth Foreground', 'Source File Date', 'Source File End', 'Source File Name', 'Source File Start', 'TL Correction', 'Threshold', 'Total Fish', 'Upstream', 'Upstream Motion', 'Window End', 'Window Start', 'body', 'body_header']
-FILE_KEYS = ['Count  File Name', 'Source File Name']
+WELL_KNOWN_KEYS = [
+    "Alpha",
+    "Average N Beams",
+    "Background Subtraction",
+    "Cluster Area",
+    "Convolve Beams",
+    "Convolve Samps",
+    "Count  File Name",
+    "Detect Motion",
+    "Downstream",
+    "Echo Detect Angle",
+    "Editor ID",
+    "Factor A",
+    "Factor C",
+    "Intensity",
+    "Log Multiplier",
+    "Max Count Angle",
+    "Max Count Range",
+    "Max Process Frame",
+    "Min Count Angle",
+    "Min Count Range",
+    "Min Process Frame",
+    "Min Threshold",
+    "Min Track Size",
+    "Sidestream",
+    "Smooth Foreground",
+    "Source File Date",
+    "Source File End",
+    "Source File Name",
+    "Source File Start",
+    "TL Correction",
+    "Threshold",
+    "Total Fish",
+    "Upstream",
+    "Upstream Motion",
+    "Window End",
+    "Window Start",
+    "body",
+    "body_header",
+]
+FILE_KEYS = ["Count  File Name", "Source File Name"]
 
 # This converts the key values above to valid column names.
 # keys not listed are used as column names as shown above.
 FIELD_NAMES = {
-    'File': 'File_Code',
-    'R (m)': 'R_m',
-    'L(cm)': 'L_cm',
-    'L(frm)': 'L_frm',
-    'dR(cm)': 'dR_cm',
-    'L/dR': 'L_over_dR',
-    'T(cm)': 'T_cm',
-    'L/T': 'L_over_T',
-    'Time': 'Time_iso',
-    'Date': 'Date_iso',
-    'Q': 'Quality',
-    'N': 'Repeat_Count'
+    "File": "File_Code",
+    "R (m)": "R_m",
+    "L(cm)": "L_cm",
+    "L(frm)": "L_frm",
+    "dR(cm)": "dR_cm",
+    "L/dR": "L_over_dR",
+    "T(cm)": "T_cm",
+    "L/T": "L_over_T",
+    "Time": "Time_iso",
+    "Date": "Date_iso",
+    "Q": "Quality",
+    "N": "Repeat_Count",
 }
+
 
 def parse_header(file_handle, file_data):
     found_end = False
     line_count = 0
     for line in file_handle:
         line = line.strip()
-        if line == '*** Echogram Counting ***' or line.startswith('*** Manual Marking'):
+        if line == "*** Echogram Counting ***" or line.startswith("*** Manual Marking"):
             found_end = True
             break
-        tokens = line.split('=', 1)
+        tokens = line.split("=", 1)
         if len(tokens) != 2:
-            tokens = line.split(':', 1)
+            tokens = line.split(":", 1)
         if len(tokens) != 2:
-            if line.endswith(' ENABLED'):
-                tokens = [line.replace(' ENABLED', ''), 'ENABLED']
+            if line.endswith(" ENABLED"):
+                tokens = [line.replace(" ENABLED", ""), "ENABLED"]
         if len(tokens) == 2:
             key = tokens[0].strip()
-            if key == '??':
-                key = 'Sidestream'
+            if key == "??":
+                key = "Sidestream"
             value = tokens[1].strip()
             if key in file_data:
                 raise Warning("key " + key + " is used twice")
@@ -103,21 +150,29 @@ def parse_body(file_handle, file_data):
     rows = []
     for line in file_handle:
         line = line.strip()
-        if line == '*** Source File Key ***':
+        if line == "*** Source File Key ***":
             found_end = True
             break
-        if not header: 
-            header = [e.strip() for e in line.strip().split('  ') if e]
+        if not header:
+            header = [e.strip() for e in line.strip().split("  ") if e]
         if header:
-            items = [e.strip() for e in line.strip().split(' ') if e]
+            items = [e.strip() for e in line.strip().split(" ") if e]
         if items and len(items) >= 24:
-            row = items[:14] + \
-                  [items[14] + items[15] + items[16] + items[17] + items[18],     # Latitude
-                  items[19] + items[20] + items[21] + items[22] + items[23]] + \
-                  items[24:]
+            row = (
+                items[:14]
+                + [
+                    items[14]
+                    + items[15]
+                    + items[16]
+                    + items[17]
+                    + items[18],  # Latitude
+                    items[19] + items[20] + items[21] + items[22] + items[23],
+                ]
+                + items[24:]
+            )
             rows.append(row)
-    file_data['body_header'] = header
-    file_data['body'] = rows
+    file_data["body_header"] = header
+    file_data["body"] = rows
     # print(rows[0])
     if not found_end:
         raise Warning("No end of body found")
@@ -125,10 +180,10 @@ def parse_body(file_handle, file_data):
 
 def parse_footer(file_handle, file_data):
     for line in file_handle:
-        if line[:2] == '1:':
+        if line[:2] == "1:":
             line = line[2:]
         line = line.strip()
-        tokens = line.split(':', 1)
+        tokens = line.split(":", 1)
         if len(tokens) == 2:
             key = tokens[0].strip()
             value = tokens[1].strip()
@@ -143,26 +198,26 @@ def parse_file(filename, data, conn=None, do_save=False):
             parse_body(file_handle, file_data)
             parse_footer(file_handle, file_data)
         except Exception as ex:
-            file_data['error'] = ex.message
+            file_data["error"] = ex.message
     data[filename] = file_data
 
 
 def parse_folder(root, data, conn=None, do_save=False):
     for (foldername, _, filenames) in os.walk(root):
         for filename in filenames:
-            parse_file(os.path.join(foldername,filename), data, conn, do_save)
+            parse_file(os.path.join(foldername, filename), data, conn, do_save)
 
 
 def print_errors(data):
     for file in data:
-        if 'error' in data[file]:
-            print("{0}: {1}".format(file, data[file]['error']))
+        if "error" in data[file]:
+            print("{0}: {1}".format(file, data[file]["error"]))
 
 
 def print_body_headers_errors(data):
     for file in data:
-        if 'body_header' in data[file]:
-            header = data[file]['body_header']
+        if "body_header" in data[file]:
+            header = data[file]["body_header"]
             if header not in WELL_KNOWN_HEADERS:
                 print("HEADER MISMATCH: {0}: {1}".format(file, header))
 
@@ -171,7 +226,7 @@ def print_key_errors(data):
     keys = set([])
     for file in data:
         for key in data[file]:
-            if key not in WELL_KNOWN_KEYS and key != 'error':
+            if key not in WELL_KNOWN_KEYS and key != "error":
                 keys.add(key)
     if keys:
         print("UNKNOWN KEYS: {0}".format(keys))
@@ -185,12 +240,13 @@ def test(data):
 
 def get_connection_or_die(pyodbc, server, db):
     # See https://github.com/mkleehammer/pyodbc/wiki/Connecting-to-SQL-Server-from-Windows
-    drivers = [ '{ODBC Driver 17 for SQL Server}',    # supports SQL Server 2008 through 2017
-                '{ODBC Driver 13.1 for SQL Server}',  # supports SQL Server 2008 through 2016
-                '{ODBC Driver 13 for SQL Server}',    # supports SQL Server 2005 through 2016
-                '{ODBC Driver 11 for SQL Server}',    # supports SQL Server 2005 through 2014
-                '{SQL Server Native Client 11.0}',    # DEPRECATED: released with SQL Server 2012
-                # '{SQL Server Native Client 10.0}',    # DEPRECATED: released with SQL Server 2008
+    drivers = [
+        "{ODBC Driver 17 for SQL Server}",  # supports SQL Server 2008 through 2017
+        "{ODBC Driver 13.1 for SQL Server}",  # supports SQL Server 2008 through 2016
+        "{ODBC Driver 13 for SQL Server}",  # supports SQL Server 2005 through 2016
+        "{ODBC Driver 11 for SQL Server}",  # supports SQL Server 2005 through 2014
+        "{SQL Server Native Client 11.0}",  # DEPRECATED: released with SQL Server 2012
+        # '{SQL Server Native Client 10.0}',    # DEPRECATED: released with SQL Server 2008
     ]
     conn_template = "DRIVER={0};SERVER={1};DATABASE={2};Trusted_Connection=Yes;"
     for driver in drivers:
@@ -208,7 +264,7 @@ def get_connection_or_die(pyodbc, server, db):
 
 
 def fix_summary_key(old):
-    return old.replace('  ', '_').replace(' ', '_')
+    return old.replace("  ", "_").replace(" ", "_")
 
 
 def fix_count_key(old):
@@ -219,13 +275,20 @@ def fix_count_key(old):
 
 
 def write_file(connection, filename, summary):
-    with open(filename, 'rb') as file_handle:
+    with open(filename, "rb") as file_handle:
         contents = file_handle.read()
-    sql = ("INSERT SonarCountFiles "
-           "(Processing_File_Name, Count_File_Name, Source_File_Name, Contents) "
-           "OUTPUT Inserted.Sonar_Count_File_ID "
-           "VALUES (?,?,?,?);")
-    data = [filename, summary['Count  File Name'], summary['Source File Name'], contents]
+    sql = (
+        "INSERT SonarCountFiles "
+        "(Processing_File_Name, Count_File_Name, Source_File_Name, Contents) "
+        "OUTPUT Inserted.Sonar_Count_File_ID "
+        "VALUES (?,?,?,?);"
+    )
+    data = [
+        filename,
+        summary["Count  File Name"],
+        summary["Source File Name"],
+        contents,
+    ]
     # print(sql)
     # print(data)
     file_id = None
@@ -233,12 +296,12 @@ def write_file(connection, filename, summary):
         with connection.cursor() as wcursor:
             file_id = wcursor.execute(sql, data).fetchval()
     except Exception as de:
-        err = "Database error:\n" + str(sql) + '\n' + str(de)
-        return ('Error', err)
+        err = "Database error:\n" + str(sql) + "\n" + str(de)
+        return ("Error", err)
     if file_id is None:
-        return ('Error', 'Database did not return the Sonar_Count_File_ID')
+        return ("Error", "Database did not return the Sonar_Count_File_ID")
     else:
-        return ('Ok', file_id)
+        return ("Ok", file_id)
 
 
 SUMMARY_KEYS = [c for c in WELL_KNOWN_KEYS[:-2] if c not in FILE_KEYS]
@@ -246,10 +309,9 @@ SUMMARY_COLUMNS = [fix_summary_key(c) for c in SUMMARY_KEYS]
 
 
 def write_summary(connection, file_id, summary):
-    columns = ','.join(SUMMARY_COLUMNS)
-    values = ','.join(['?'] * len(SUMMARY_COLUMNS))
-    sql = ("INSERT SonarCountFileSummaries "
-           "(Sonar_Count_File_ID,{0}) VALUES (?,{1});")
+    columns = ",".join(SUMMARY_COLUMNS)
+    values = ",".join(["?"] * len(SUMMARY_COLUMNS))
+    sql = "INSERT SonarCountFileSummaries " "(Sonar_Count_File_ID,{0}) VALUES (?,{1});"
     sql = sql.format(columns, values)
     # print(sql)
     data = [file_id]
@@ -263,20 +325,19 @@ def write_summary(connection, file_id, summary):
             # print(data)
             wcursor.execute(sql, data)
     except Exception as de:
-        err = "Database error:\n" + str(sql) + '\n' + str(de)
+        err = "Database error:\n" + str(sql) + "\n" + str(de)
         print(err)
         return err
     return None
 
 
 def write_counts(connection, file_id, header, counts):
-    columns = ','.join(header)
+    columns = ",".join(header)
     for old in FIELD_NAMES:
         new = FIELD_NAMES[old]
-        columns = columns.replace(old,new) 
-    values = ','.join(['?'] * len(header))
-    sql = ("INSERT SonarCountFileCounts "
-           "(Sonar_Count_File_ID,{0}) VALUES (?,{1});")
+        columns = columns.replace(old, new)
+    values = ",".join(["?"] * len(header))
+    sql = "INSERT SonarCountFileCounts " "(Sonar_Count_File_ID,{0}) VALUES (?,{1});"
     sql = sql.format(columns, values)
     # print(sql)
     try:
@@ -286,7 +347,7 @@ def write_counts(connection, file_id, header, counts):
                 # print(data)
                 wcursor.execute(sql, data)
     except Exception as de:
-        err = "Database error:\n" + str(sql) + '\n' + str(de)
+        err = "Database error:\n" + str(sql) + "\n" + str(de)
         print(err)
         return err
     return None
@@ -295,19 +356,19 @@ def write_counts(connection, file_id, header, counts):
 def save(data, conn):
     for file_name in data:
         state, response = write_file(conn, file_name, data[file_name])
-        if state == 'Ok':
+        if state == "Ok":
             file_id = response
             # print(file_id)
             write_summary(conn, file_id, data[file_name])
-            header = data[file_name]['body_header']
-            body = data[file_name]['body']
+            header = data[file_name]["body_header"]
+            body = data[file_name]["body"]
             write_counts(conn, file_id, header, body)
         else:
             error_message = response
-            print('Error for {0}: {1}'.format(file_name, error_message))
+            print("Error for {0}: {1}".format(file_name, error_message))
 
 
-def main(source, do_test=True, do_save=False, server='inpakrovmais', db='LACL_Fish'):
+def main(source, do_test=True, do_save=False, server="inpakrovmais", db="LACL_Fish"):
     conn = None
     if do_save:
         try:
@@ -315,8 +376,8 @@ def main(source, do_test=True, do_save=False, server='inpakrovmais', db='LACL_Fi
         except ImportError:
             pyodbc = None
             pydir = os.path.dirname(sys.executable)
-            print('pyodbc module not found, make sure it is installed with')
-            print(pydir + r'\Scripts\pip.exe install pyodbc')
+            print("pyodbc module not found, make sure it is installed with")
+            print(pydir + r"\Scripts\pip.exe install pyodbc")
             sys.exit()
         conn = get_connection_or_die(pyodbc, server, db)
 
@@ -331,8 +392,8 @@ def main(source, do_test=True, do_save=False, server='inpakrovmais', db='LACL_Fi
         save(data, conn)
 
 
-if __name__ == '__main__':
-    #main(r"C:\tmp\LACL_Sonar\Newhalen\2018\FC_2018-08-11_110000_LF.txt", do_test=False, do_save=True)
-    #main(r"C:\tmp\LACL_Sonar\Chulitna\2015")
+if __name__ == "__main__":
+    # main(r"C:\tmp\LACL_Sonar\Newhalen\2018\FC_2018-08-11_110000_LF.txt", do_test=False, do_save=True)
+    # main(r"C:\tmp\LACL_Sonar\Chulitna\2015")
     main(r"C:\tmp\LACL_Fish\LACL Sonar Counts 2020", do_test=True)
-    #main(r"C:\tmp\LACL_Fish\LACL Sonar Counts 2020", do_test=False, do_save=True)
+    # main(r"C:\tmp\LACL_Fish\LACL Sonar Counts 2020", do_test=False, do_save=True)
