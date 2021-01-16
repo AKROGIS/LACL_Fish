@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Reads a file (or folder of files recursively) of Sonar data from a 
+Reads a file (or folder of files recursively) of Sonar data from a
 XXX Hardware/software data collector
 and stores the file (as a blob) and all of the file's data in three
 tables in a relational database.  This file assumes the tables in the
@@ -190,7 +190,7 @@ def parse_footer(file_handle, file_data):
             file_data[key] = value
 
 
-def parse_file(filename, data, conn=None, do_save=False):
+def parse_file(filename, data):
     file_data = {}
     with open(filename) as file_handle:
         try:
@@ -202,10 +202,10 @@ def parse_file(filename, data, conn=None, do_save=False):
     data[filename] = file_data
 
 
-def parse_folder(root, data, conn=None, do_save=False):
+def parse_folder(root, data):
     for (foldername, _, filenames) in os.walk(root):
         for filename in filenames:
-            parse_file(os.path.join(foldername, filename), data, conn, do_save)
+            parse_file(os.path.join(foldername, filename), data)
 
 
 def print_errors(data):
@@ -238,7 +238,7 @@ def test(data):
     print_key_errors(data)
 
 
-def get_connection_or_die(pyodbc, server, db):
+def get_connection_or_die(pyodbc, server, database):
     # See https://github.com/mkleehammer/pyodbc/wiki/Connecting-to-SQL-Server-from-Windows
     drivers = [
         "{ODBC Driver 17 for SQL Server}",  # supports SQL Server 2008 through 2017
@@ -250,7 +250,7 @@ def get_connection_or_die(pyodbc, server, db):
     ]
     conn_template = "DRIVER={0};SERVER={1};DATABASE={2};Trusted_Connection=Yes;"
     for driver in drivers:
-        conn_string = conn_template.format(driver, server, db)
+        conn_string = conn_template.format(driver, server, database)
         try:
             connection = pyodbc.connect(conn_string)
             return connection
@@ -270,8 +270,7 @@ def fix_summary_key(old):
 def fix_count_key(old):
     if old in FIELD_NAMES:
         return FIELD_NAMES[old]
-    else:
-        return old
+    return old
 
 
 def write_file(connection, filename, summary):
@@ -295,13 +294,12 @@ def write_file(connection, filename, summary):
     try:
         with connection.cursor() as wcursor:
             file_id = wcursor.execute(sql, data).fetchval()
-    except Exception as de:
-        err = "Database error:\n" + str(sql) + "\n" + str(de)
+    except Exception as ex:
+        err = "Database error:\n" + str(sql) + "\n" + str(ex)
         return ("Error", err)
     if file_id is None:
         return ("Error", "Database did not return the Sonar_Count_File_ID")
-    else:
-        return ("Ok", file_id)
+    return ("Ok", file_id)
 
 
 SUMMARY_KEYS = [c for c in WELL_KNOWN_KEYS[:-2] if c not in FILE_KEYS]
@@ -311,7 +309,7 @@ SUMMARY_COLUMNS = [fix_summary_key(c) for c in SUMMARY_KEYS]
 def write_summary(connection, file_id, summary):
     columns = ",".join(SUMMARY_COLUMNS)
     values = ",".join(["?"] * len(SUMMARY_COLUMNS))
-    sql = "INSERT SonarCountFileSummaries " "(Sonar_Count_File_ID,{0}) VALUES (?,{1});"
+    sql = "INSERT SonarCountFileSummaries (Sonar_Count_File_ID,{0}) VALUES (?,{1});"
     sql = sql.format(columns, values)
     # print(sql)
     data = [file_id]
@@ -324,8 +322,8 @@ def write_summary(connection, file_id, summary):
         with connection.cursor() as wcursor:
             # print(data)
             wcursor.execute(sql, data)
-    except Exception as de:
-        err = "Database error:\n" + str(sql) + "\n" + str(de)
+    except Exception as ex:
+        err = "Database error:\n" + str(sql) + "\n" + str(ex)
         print(err)
         return err
     return None
@@ -337,7 +335,7 @@ def write_counts(connection, file_id, header, counts):
         new = FIELD_NAMES[old]
         columns = columns.replace(old, new)
     values = ",".join(["?"] * len(header))
-    sql = "INSERT SonarCountFileCounts " "(Sonar_Count_File_ID,{0}) VALUES (?,{1});"
+    sql = "INSERT SonarCountFileCounts (Sonar_Count_File_ID,{0}) VALUES (?,{1});"
     sql = sql.format(columns, values)
     # print(sql)
     try:
@@ -346,8 +344,8 @@ def write_counts(connection, file_id, header, counts):
                 data = [file_id] + count
                 # print(data)
                 wcursor.execute(sql, data)
-    except Exception as de:
-        err = "Database error:\n" + str(sql) + "\n" + str(de)
+    except Exception as ex:
+        err = "Database error:\n" + str(sql) + "\n" + str(ex)
         print(err)
         return err
     return None
@@ -368,7 +366,7 @@ def save(data, conn):
             print("Error for {0}: {1}".format(file_name, error_message))
 
 
-def main(source, do_test=True, do_save=False, server="inpakrovmais", db="LACL_Fish"):
+def main(source, do_test=True, do_save=False, server="inpakrovmais", database="LACL_Fish"):
     conn = None
     if do_save:
         try:
@@ -379,13 +377,13 @@ def main(source, do_test=True, do_save=False, server="inpakrovmais", db="LACL_Fi
             print("pyodbc module not found, make sure it is installed with")
             print(pydir + r"\Scripts\pip.exe install pyodbc")
             sys.exit()
-        conn = get_connection_or_die(pyodbc, server, db)
+        conn = get_connection_or_die(pyodbc, server, database)
 
     data = {}
     if os.path.isfile(source):
-        parse_file(source, data, conn, do_save)
+        parse_file(source, data)
     else:
-        parse_folder(source, data, conn, do_save)
+        parse_folder(source, data)
     if do_test:
         test(data)
     if do_save:
@@ -393,7 +391,5 @@ def main(source, do_test=True, do_save=False, server="inpakrovmais", db="LACL_Fi
 
 
 if __name__ == "__main__":
-    # main(r"C:\tmp\LACL_Sonar\Newhalen\2018\FC_2018-08-11_110000_LF.txt", do_test=False, do_save=True)
-    # main(r"C:\tmp\LACL_Sonar\Chulitna\2015")
     main(r"C:\tmp\LACL_Fish\LACL Sonar Counts 2020", do_test=True)
     # main(r"C:\tmp\LACL_Fish\LACL Sonar Counts 2020", do_test=False, do_save=True)
