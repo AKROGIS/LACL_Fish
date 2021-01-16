@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 '''
-Reads a file (or folder of files recusively) of Sonar data from a 
+Reads a file (or folder of files recursively) of Sonar data from a 
 XXX Hardware/software data collector
 and stores the file (as a blob) and all of the file's data in three
 tables in a relational database.  This file assumes the tables in the
@@ -23,7 +23,7 @@ assumptions are listed in the GLOBAL variables at the start of this file.
 This script is hard coded to assume the database backend is SQL Server.
 The server name and database can be specified by **server** and **db**
 parameters to the main function.  The defaults are server='inpakrovmais' and
-db='Fish_Tagging'.
+db='LACL_Fish'.
 
 This script was written for python 2.7 and has an external dependency on
 the **pyodbc** python module. It can be installed with **pip install pyodbc**
