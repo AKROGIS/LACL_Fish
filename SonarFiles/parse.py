@@ -22,8 +22,8 @@ assumptions are listed in the GLOBAL variables at the start of this file.
 
 This script is hard coded to assume the database backend is SQL Server.
 The server name and database can be specified by **server** and **db**
-parameters to the main function.  The defaults are server='inpakrovmais' and
-db='LACL_Fish'.
+parameters to the main function.  The defaults are server="inpakrovmais" and
+db="LACL_Fish".
 
 This script was written for python 2.7 and has an external dependency on
 the **pyodbc** python module. It can be installed with **pip install pyodbc**
@@ -38,12 +38,12 @@ import sys
 # the following variations were seen in the initial data load.
 # new variants can be added as needed, but may require adding
 # additional columns to the database
-BODY_HEADER_1 = ['File', 'Total', 'Mark', 'Frame#', 'Dir', 'R (m)', 'Theta', 'L(cm)',   'T(cm)', 'L/T',  'Aspect', 'Cluster', 'Time', 'Date', 'Latitude', 'Longitude', 'Pan', 'Tilt', 'Roll']
-BODY_HEADER_2 = ['File', 'Total', 'Mark', 'Frame#', 'Dir', 'R (m)', 'Theta', 'L(cm)',  'dR(cm)', 'L/dR', 'Aspect', 'Cluster', 'Time', 'Date', 'Latitude', 'Longitude', 'Pan', 'Tilt', 'Roll']
-BODY_HEADER_3 = ['File', 'Total', 'Mark', 'Frame#', 'Dir', 'R (m)', 'Theta', 'L(frm)', 'dR(cm)', 'L/T',  'Aspect', 'Track',   'Time', 'Date', 'Latitude', 'Longitude', 'Pan', 'Tilt', 'Roll']
-BODY_HEADER_4 = ['File', 'Total', 'Mark', 'Frame#', 'Dir', 'R (m)', 'Theta', 'L(frm)', 'dR(cm)', 'L/dR', 'Aspect', 'Track',   'Time', 'Date', 'Latitude', 'Longitude', 'Pan', 'Tilt', 'Roll']
-BODY_HEADER_5 = ['File', 'Total',         'Frame#', 'Dir', 'R (m)', 'Theta', 'L(cm)',   'T(cm)', 'L/T',  'Aspect',            'Time', 'Date', 'Latitude', 'Longitude', 'Pan', 'Tilt', 'Roll', 'Species', 'Motion', 'Q', 'N', 'Comment']
-BODY_HEADER_6 = ['File', 'Total',         'Frame#', 'Dir', 'R (m)', 'Theta', 'L(cm)',  'dR(cm)', 'L/dR', 'Aspect',            'Time', 'Date', 'Latitude', 'Longitude', 'Pan', 'Tilt', 'Roll', 'Species', 'Motion', 'Q', 'N', 'Comment']
+BODY_HEADER_1 = ["File", "Total", "Mark", "Frame#", "Dir", "R (m)", "Theta", "L(cm)",   "T(cm)", "L/T",  "Aspect", "Cluster", "Time", "Date", "Latitude", "Longitude", "Pan", "Tilt", "Roll"]
+BODY_HEADER_2 = ["File", "Total", "Mark", "Frame#", "Dir", "R (m)", "Theta", "L(cm)",  "dR(cm)", "L/dR", "Aspect", "Cluster", "Time", "Date", "Latitude", "Longitude", "Pan", "Tilt", "Roll"]
+BODY_HEADER_3 = ["File", "Total", "Mark", "Frame#", "Dir", "R (m)", "Theta", "L(frm)", "dR(cm)", "L/T",  "Aspect", "Track",   "Time", "Date", "Latitude", "Longitude", "Pan", "Tilt", "Roll"]
+BODY_HEADER_4 = ["File", "Total", "Mark", "Frame#", "Dir", "R (m)", "Theta", "L(frm)", "dR(cm)", "L/dR", "Aspect", "Track",   "Time", "Date", "Latitude", "Longitude", "Pan", "Tilt", "Roll"]
+BODY_HEADER_5 = ["File", "Total",         "Frame#", "Dir", "R (m)", "Theta", "L(cm)",   "T(cm)", "L/T",  "Aspect",            "Time", "Date", "Latitude", "Longitude", "Pan", "Tilt", "Roll", "Species", "Motion", "Q", "N", "Comment"]
+BODY_HEADER_6 = ["File", "Total",         "Frame#", "Dir", "R (m)", "Theta", "L(cm)",  "dR(cm)", "L/dR", "Aspect",            "Time", "Date", "Latitude", "Longitude", "Pan", "Tilt", "Roll", "Species", "Motion", "Q", "N", "Comment"]
 WELL_KNOWN_HEADERS = [
     BODY_HEADER_1,
     BODY_HEADER_2,
@@ -246,7 +246,7 @@ def get_connection_or_die(pyodbc, server, db):
         "{ODBC Driver 13 for SQL Server}",  # supports SQL Server 2005 through 2016
         "{ODBC Driver 11 for SQL Server}",  # supports SQL Server 2005 through 2014
         "{SQL Server Native Client 11.0}",  # DEPRECATED: released with SQL Server 2012
-        # '{SQL Server Native Client 10.0}',    # DEPRECATED: released with SQL Server 2008
+        # "{SQL Server Native Client 10.0}",    # DEPRECATED: released with SQL Server 2008
     ]
     conn_template = "DRIVER={0};SERVER={1};DATABASE={2};Trusted_Connection=Yes;"
     for driver in drivers:
