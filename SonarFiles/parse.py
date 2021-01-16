@@ -25,8 +25,9 @@ The server name and database can be specified by **server** and **db**
 parameters to the main function.  The defaults are server="inpakrovmais" and
 db="LACL_Fish".
 
-This script was written for python 2.7 and has an external dependency on
-the **pyodbc** python module. It can be installed with **pip install pyodbc**
+This script was written for python 2.7, but should work with python 3
+It has an external dependency on the **pyodbc** python module.
+It can be installed with **pip install pyodbc**
 """
 
 from __future__ import print_function
@@ -119,7 +120,6 @@ FIELD_NAMES = {
 
 def parse_header(file_handle, file_data):
     found_end = False
-    line_count = 0
     for line in file_handle:
         line = line.strip()
         if line == "*** Echogram Counting ***" or line.startswith("*** Manual Marking"):
@@ -198,7 +198,7 @@ def parse_file(filename, data, conn=None, do_save=False):
             parse_body(file_handle, file_data)
             parse_footer(file_handle, file_data)
         except Exception as ex:
-            file_data["error"] = ex.message
+            file_data["error"] = repr(ex)
     data[filename] = file_data
 
 
