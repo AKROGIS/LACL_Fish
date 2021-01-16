@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 '''
 Reads a file (or folder of files recusively) of Sonar data from a 
 XXX Hardware/software data collector
@@ -26,6 +28,8 @@ db='Fish_Tagging'.
 This script was written for python 2.7 and has an external dependency on
 the **pyodbc** python module. It can be installed with **pip install pyodbc**
 '''
+
+from __future__ import print_function
 
 import os
 import sys
@@ -311,6 +315,8 @@ def main(source, do_test=True, do_save=False, server='inpakrovmais', db='LACL_Fi
         except ImportError:
             pyodbc = None
             pydir = os.path.dirname(sys.executable)
+            print('pyodbc module not found, make sure it is installed with')
+            print(pydir + r'\Scripts\pip.exe install pyodbc')
             sys.exit()
         conn = get_connection_or_die(pyodbc, server, db)
 
