@@ -23,12 +23,12 @@ This script is hard coded to assume the database backend is SQL Server.
 The server name and database can be specified by `server` and `database`
 parameters to the CONFIG object.
 
-This script was written for python 2.7, but should work with python 3
+This script was written for python 2.7 and tested succesfully with python 3.6
 It has an external dependency on the **pyodbc** python module.
 It can be installed with `pip install pyodbc`
 
 NOTE: with py3 and unicode_literals (py2) all strings are unicode.  However,
-the the database fields are all 8bit characters (not unicode), except for the
+the database fields are all 8bit characters (not unicode), except for the
 filename.  This is acceptable/appropriate because the text in the datafiles is
 limited to ASCII.  If this changes, the database schema will need to change. 
 """
