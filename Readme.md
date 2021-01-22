@@ -112,13 +112,15 @@ I recall this phase begain in 2018 with an intial upload of data from 2016-2018.
 Updates were done with data collected in 2019 and then again in 2020.
 
 Every year, a folder of files is provided by LACL (James Kramer in 2020).
-The parse.py script is edited (last few lines) to fist test the input files
+The `parse.py` script CONFIG object is edited to first test the input files
 (an entire folder of files can be processed at once). If there are no
-processing errors in the test, then the last line of the script can be
-changed to do an actual database update and the script re-run.  In the past
-the processing has failed due to a corrupt (usually empty) sonar file.  These
-can be removed from the processing folder and returned to LACL for remdial action.
-The remainder of the files can then be processed.
+processing errors in the test, then edit the CONFIG to do an actual database
+update and then re-run the script.  In the past the processing has failed due to
+a corrupt (usually empty) sonar file. These can be removed from the processing
+folder and returned to LACL for remedial action. The remainder of the files can
+then be processed.  It is also possible that a new (unexpected) file format is
+submitted which may require edits to the script.  Hopefully small tweaks to the
+global configuration parameters will be sufficient.
 
 Once the data is loaded the LACL staff access the data directly using `Azure DataStudio`
 and SQL queries.

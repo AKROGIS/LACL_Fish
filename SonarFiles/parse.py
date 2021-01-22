@@ -12,8 +12,7 @@ to process, as well as additional parameters as described here.
 
 This process can be run in a **test** mode to look for errors or unexpected
 data in the input file(s), and/or **save** mode to write the data to the
-database.  Use the boolean parameters do_test and do_save when calling
-the main function.  The default is do_test=True, and do_save=False.
+database.  Use the `test` and `save` parameters to the CONFIG object.
 
 It is recommend to always test a file/folder before running in save mode.
 If errors are found, either remove the offending files (if they are bad),
@@ -21,13 +20,12 @@ or modify this script to deal with the unexpected file data.  Most tests
 assumptions are listed in the GLOBAL variables at the start of this file.
 
 This script is hard coded to assume the database backend is SQL Server.
-The server name and database can be specified by **server** and **db**
-parameters to the main function.  The defaults are server="inpakrovmais" and
-db="LACL_Fish".
+The server name and database can be specified by `server` and `database`
+parameters to the CONFIG object.
 
 This script was written for python 2.7, but should work with python 3
 It has an external dependency on the **pyodbc** python module.
-It can be installed with **pip install pyodbc**
+It can be installed with `pip install pyodbc`
 
 NOTE: with py3 and unicode_literals (py2) all strings are unicode.  However,
 the the database fields are all 8bit characters (not unicode), except for the
@@ -39,6 +37,23 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import os
 import sys
+
+CONFIG = {
+    # source - A single sonar file, or a folder of sonar files.
+    "source": "C:/tmp/LACL Sonar Counts 2020",
+
+    # test - If True then we test the input files for unexpected formatting.
+    "test": True,
+
+    # save - If False, then do not save the data files/summary into the database.
+    "save": False,
+
+    # server - the host name of the database server to write to when save = True.
+    "server": "inpakrovmais",
+
+    # database - the name of the database to write to when save = True.
+    "database": "LACL_Fish",
+}
 
 # column names for the tabular data in the middle of the file
 # the following variations were seen in the initial data load.
@@ -374,9 +389,12 @@ def save(data, conn):
             print("Error for {0}: {1}".format(file_name, error_message))
 
 
-def main(source, do_test=True, do_save=False, server="inpakrovmais", database="LACL_Fish"):
+def main(source, do_test=True, do_save=False, server=None, database=None):
     conn = None
     if do_save:
+        if server is None or database is None:
+            print("Error Server and Database must be specified in save mode.")
+            sys.exit()
         try:
             import pyodbc
         except ImportError:
@@ -399,5 +417,10 @@ def main(source, do_test=True, do_save=False, server="inpakrovmais", database="L
 
 
 if __name__ == "__main__":
-    main(r"C:\tmp\LACL_Fish\LACL Sonar Counts 2020", do_test=True)
-    # main(r"C:\tmp\LACL_Fish\LACL Sonar Counts 2020", do_test=False, do_save=True)
+    main(
+        CONFIG["source"],
+        do_test=CONFIG["test"],
+        do_save=CONFIG["save"],
+        server=CONFIG["server"],
+        database=CONFIG["database"]
+    )
