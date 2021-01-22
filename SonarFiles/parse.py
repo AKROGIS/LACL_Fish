@@ -28,9 +28,14 @@ db="LACL_Fish".
 This script was written for python 2.7, but should work with python 3
 It has an external dependency on the **pyodbc** python module.
 It can be installed with **pip install pyodbc**
+
+NOTE: with py3 and unicode_literals (py2) all strings are unicode.  However,
+the the database fields are all 8bit characters (not unicode), except for the
+filename.  This is acceptable/appropriate because the text in the datafiles is
+limited to ASCII.  If this changes, the database schema will need to change. 
 """
 
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import os
 import sys
@@ -277,6 +282,7 @@ def fix_count_key(old):
 
 def write_file(connection, filename, summary):
     with open(filename, "rb") as file_handle:
+        # open/read file as a binary blob (bytes not str) 
         contents = file_handle.read()
     sql = (
         "INSERT SonarCountFiles "
