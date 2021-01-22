@@ -41,16 +41,12 @@ import sys
 CONFIG = {
     # source - A single sonar file, or a folder of sonar files.
     "source": "C:/tmp/LACL Sonar Counts 2020",
-
     # test - If True then we test the input files for unexpected formatting.
     "test": True,
-
     # save - If False, then do not save the data files/summary into the database.
     "save": False,
-
     # server - the host name of the database server to write to when save = True.
     "server": "inpakrovmais",
-
     # database - the name of the database to write to when save = True.
     "database": "LACL_Fish",
 }
@@ -297,7 +293,7 @@ def fix_count_key(old):
 
 def write_file(connection, filename, summary):
     with open(filename, "rb") as file_handle:
-        # open/read file as a binary blob (bytes not str) 
+        # open/read file as a binary blob (bytes not str)
         contents = file_handle.read()
     sql = (
         "INSERT SonarCountFiles "
@@ -422,5 +418,5 @@ if __name__ == "__main__":
         do_test=CONFIG["test"],
         do_save=CONFIG["save"],
         server=CONFIG["server"],
-        database=CONFIG["database"]
+        database=CONFIG["database"],
     )
