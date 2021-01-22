@@ -39,12 +39,14 @@ import sys
 # the following variations were seen in the initial data load.
 # new variants can be added as needed, but may require adding
 # additional columns to the database
+# fmt: off
 BODY_HEADER_1 = ["File", "Total", "Mark", "Frame#", "Dir", "R (m)", "Theta", "L(cm)",   "T(cm)", "L/T",  "Aspect", "Cluster", "Time", "Date", "Latitude", "Longitude", "Pan", "Tilt", "Roll"]
 BODY_HEADER_2 = ["File", "Total", "Mark", "Frame#", "Dir", "R (m)", "Theta", "L(cm)",  "dR(cm)", "L/dR", "Aspect", "Cluster", "Time", "Date", "Latitude", "Longitude", "Pan", "Tilt", "Roll"]
 BODY_HEADER_3 = ["File", "Total", "Mark", "Frame#", "Dir", "R (m)", "Theta", "L(frm)", "dR(cm)", "L/T",  "Aspect", "Track",   "Time", "Date", "Latitude", "Longitude", "Pan", "Tilt", "Roll"]
 BODY_HEADER_4 = ["File", "Total", "Mark", "Frame#", "Dir", "R (m)", "Theta", "L(frm)", "dR(cm)", "L/dR", "Aspect", "Track",   "Time", "Date", "Latitude", "Longitude", "Pan", "Tilt", "Roll"]
 BODY_HEADER_5 = ["File", "Total",         "Frame#", "Dir", "R (m)", "Theta", "L(cm)",   "T(cm)", "L/T",  "Aspect",            "Time", "Date", "Latitude", "Longitude", "Pan", "Tilt", "Roll", "Species", "Motion", "Q", "N", "Comment"]
 BODY_HEADER_6 = ["File", "Total",         "Frame#", "Dir", "R (m)", "Theta", "L(cm)",  "dR(cm)", "L/dR", "Aspect",            "Time", "Date", "Latitude", "Longitude", "Pan", "Tilt", "Roll", "Species", "Motion", "Q", "N", "Comment"]
+# fmt: on
 WELL_KNOWN_HEADERS = [
     BODY_HEADER_1,
     BODY_HEADER_2,
