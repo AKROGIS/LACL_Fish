@@ -35,6 +35,7 @@ limited to ASCII.  If this changes, the database schema will need to change.
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+from io import open
 import os
 import sys
 
@@ -210,7 +211,7 @@ def parse_footer(file_handle, file_data):
 
 def parse_file(filename, data):
     file_data = {}
-    with open(filename) as file_handle:
+    with open(filename, "r", encoding="utf-8") as file_handle:
         try:
             parse_header(file_handle, file_data)
             parse_body(file_handle, file_data)
