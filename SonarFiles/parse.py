@@ -23,7 +23,7 @@ This script is hard coded to assume the database backend is SQL Server.
 The server name and database can be specified by `server` and `database`
 parameters to the CONFIG object.
 
-This script was written for python 2.7 and tested succesfully with python 3.6
+This script was written for python 2.7 and tested successfully with python 3.6
 It has an external dependency on the **pyodbc** python module.
 It can be installed with `pip install pyodbc`
 
@@ -39,102 +39,113 @@ from io import open
 import os
 import sys
 
-CONFIG = {
+
+class Config(object):
+    """Namespace for configuration parameters. Edit as needed."""
+
+    # pylint: disable=useless-object-inheritance,too-few-public-methods
+
     # source - A single sonar file, or a folder of sonar files.
-    "source": "C:/tmp/LACL Sonar Counts 2020",
+    source = "C:/tmp/LACL Sonar Counts 2020"
+
     # test - If True then we test the input files for unexpected formatting.
-    "test": True,
+    test = True
+
     # save - If False, then do not save the data files/summary into the database.
-    "save": False,
+    save = False
+
     # server - the host name of the database server to write to when save = True.
-    "server": "inpakrovmais",
+    server = "inpakrovmais"
+
     # database - the name of the database to write to when save = True.
-    "database": "LACL_Fish",
-}
+    database = "LACL_Fish"
 
-# column names for the tabular data in the middle of the file
-# the following variations were seen in the initial data load.
-# new variants can be added as needed, but may require adding
-# additional columns to the database
-# fmt: off
-BODY_HEADER_1 = ["File", "Total", "Mark", "Frame#", "Dir", "R (m)", "Theta", "L(cm)",   "T(cm)", "L/T",  "Aspect", "Cluster", "Time", "Date", "Latitude", "Longitude", "Pan", "Tilt", "Roll"]
-BODY_HEADER_2 = ["File", "Total", "Mark", "Frame#", "Dir", "R (m)", "Theta", "L(cm)",  "dR(cm)", "L/dR", "Aspect", "Cluster", "Time", "Date", "Latitude", "Longitude", "Pan", "Tilt", "Roll"]
-BODY_HEADER_3 = ["File", "Total", "Mark", "Frame#", "Dir", "R (m)", "Theta", "L(frm)", "dR(cm)", "L/T",  "Aspect", "Track",   "Time", "Date", "Latitude", "Longitude", "Pan", "Tilt", "Roll"]
-BODY_HEADER_4 = ["File", "Total", "Mark", "Frame#", "Dir", "R (m)", "Theta", "L(frm)", "dR(cm)", "L/dR", "Aspect", "Track",   "Time", "Date", "Latitude", "Longitude", "Pan", "Tilt", "Roll"]
-BODY_HEADER_5 = ["File", "Total",         "Frame#", "Dir", "R (m)", "Theta", "L(cm)",   "T(cm)", "L/T",  "Aspect",            "Time", "Date", "Latitude", "Longitude", "Pan", "Tilt", "Roll", "Species", "Motion", "Q", "N", "Comment"]
-BODY_HEADER_6 = ["File", "Total",         "Frame#", "Dir", "R (m)", "Theta", "L(cm)",  "dR(cm)", "L/dR", "Aspect",            "Time", "Date", "Latitude", "Longitude", "Pan", "Tilt", "Roll", "Species", "Motion", "Q", "N", "Comment"]
-# fmt: on
-WELL_KNOWN_HEADERS = [
-    BODY_HEADER_1,
-    BODY_HEADER_2,
-    BODY_HEADER_3,
-    BODY_HEADER_4,
-    BODY_HEADER_5,
-    BODY_HEADER_6,
-]
+    # column names for the tabular data in the middle of the file
+    # the following variations were seen in the initial data load.
+    # new variants can be added as needed, but may require adding
+    # additional columns to the database
+    # pylint: disable=line-too-long
+    # fmt: off
+    well_known_headers = [
+        ["File", "Total", "Mark", "Frame#", "Dir", "R (m)", "Theta", "L(cm)",   "T(cm)", "L/T",  "Aspect", "Cluster", "Time", "Date", "Latitude", "Longitude", "Pan", "Tilt", "Roll"],
+        ["File", "Total", "Mark", "Frame#", "Dir", "R (m)", "Theta", "L(cm)",  "dR(cm)", "L/dR", "Aspect", "Cluster", "Time", "Date", "Latitude", "Longitude", "Pan", "Tilt", "Roll"],
+        ["File", "Total", "Mark", "Frame#", "Dir", "R (m)", "Theta", "L(frm)", "dR(cm)", "L/T",  "Aspect", "Track",   "Time", "Date", "Latitude", "Longitude", "Pan", "Tilt", "Roll"],
+        ["File", "Total", "Mark", "Frame#", "Dir", "R (m)", "Theta", "L(frm)", "dR(cm)", "L/dR", "Aspect", "Track",   "Time", "Date", "Latitude", "Longitude", "Pan", "Tilt", "Roll"],
+        ["File", "Total",         "Frame#", "Dir", "R (m)", "Theta", "L(cm)",   "T(cm)", "L/T",  "Aspect",            "Time", "Date", "Latitude", "Longitude", "Pan", "Tilt", "Roll", "Species", "Motion", "Q", "N", "Comment"],
+        ["File", "Total",         "Frame#", "Dir", "R (m)", "Theta", "L(cm)",  "dR(cm)", "L/dR", "Aspect",            "Time", "Date", "Latitude", "Longitude", "Pan", "Tilt", "Roll", "Species", "Motion", "Q", "N", "Comment"],
+    ]
+    # fmt: on
 
-# These are the names of the various key/value pairs found
-# above and below the tabular section in the initial data load.
-# New keys can be added as needed, but will require adding
-# new columns to the database.
-WELL_KNOWN_KEYS = [
-    "Alpha",
-    "Average N Beams",
-    "Background Subtraction",
-    "Cluster Area",
-    "Convolve Beams",
-    "Convolve Samps",
-    "Count  File Name",
-    "Detect Motion",
-    "Downstream",
-    "Echo Detect Angle",
-    "Editor ID",
-    "Factor A",
-    "Factor C",
-    "Intensity",
-    "Log Multiplier",
-    "Max Count Angle",
-    "Max Count Range",
-    "Max Process Frame",
-    "Min Count Angle",
-    "Min Count Range",
-    "Min Process Frame",
-    "Min Threshold",
-    "Min Track Size",
-    "Sidestream",
-    "Smooth Foreground",
-    "Source File Date",
-    "Source File End",
-    "Source File Name",
-    "Source File Start",
-    "TL Correction",
-    "Threshold",
-    "Total Fish",
-    "Upstream",
-    "Upstream Motion",
-    "Window End",
-    "Window Start",
-    "body",
-    "body_header",
-]
-FILE_KEYS = ["Count  File Name", "Source File Name"]
+    # These are the names of the various key/value pairs found
+    # above and below the tabular section in the initial data load.
+    # New keys can be added as needed, but will require adding
+    # new columns to the database.
+    well_known_keys = [
+        "Alpha",
+        "Average N Beams",
+        "Background Subtraction",
+        "Cluster Area",
+        "Convolve Beams",
+        "Convolve Samps",
+        "Count  File Name",
+        "Detect Motion",
+        "Downstream",
+        "Echo Detect Angle",
+        "Editor ID",
+        "Factor A",
+        "Factor C",
+        "Intensity",
+        "Log Multiplier",
+        "Max Count Angle",
+        "Max Count Range",
+        "Max Process Frame",
+        "Min Count Angle",
+        "Min Count Range",
+        "Min Process Frame",
+        "Min Threshold",
+        "Min Track Size",
+        "Sidestream",
+        "Smooth Foreground",
+        "Source File Date",
+        "Source File End",
+        "Source File Name",
+        "Source File Start",
+        "TL Correction",
+        "Threshold",
+        "Total Fish",
+        "Upstream",
+        "Upstream Motion",
+        "Window End",
+        "Window Start",
+        "body",
+        "body_header",
+    ]
 
-# This converts the key values above to valid column names.
-# keys not listed are used as column names as shown above.
-FIELD_NAMES = {
-    "File": "File_Code",
-    "R (m)": "R_m",
-    "L(cm)": "L_cm",
-    "L(frm)": "L_frm",
-    "dR(cm)": "dR_cm",
-    "L/dR": "L_over_dR",
-    "T(cm)": "T_cm",
-    "L/T": "L_over_T",
-    "Time": "Time_iso",
-    "Date": "Date_iso",
-    "Q": "Quality",
-    "N": "Repeat_Count",
-}
+    # The keys (columns), that we put in the file table.
+    file_keys = ["Count  File Name", "Source File Name"]
+
+    # This converts the key values above to valid column names.
+    # keys not listed are used as column names as shown above.
+    field_names = {
+        "File": "File_Code",
+        "R (m)": "R_m",
+        "L(cm)": "L_cm",
+        "L(frm)": "L_frm",
+        "dR(cm)": "dR_cm",
+        "L/dR": "L_over_dR",
+        "T(cm)": "T_cm",
+        "L/T": "L_over_T",
+        "Time": "Time_iso",
+        "Date": "Date_iso",
+        "Q": "Quality",
+        "N": "Repeat_Count",
+    }
+
+    # The keys, from the well known keys, that we put in the summary table.
+    summary_keys = [c for c in well_known_keys[:-2] if c not in file_keys]
+
+    # These are the names of the database columns for the summary keys.
+    summary_columns = [fix_summary_key(c) for c in summary_keys]
 
 
 def get_connection_or_die(server, database):
@@ -304,7 +315,7 @@ def print_body_headers_errors(data):
     for file in data:
         if "body_header" in data[file]:
             header = data[file]["body_header"]
-            if header not in WELL_KNOWN_HEADERS:
+            if header not in Config.well_known_headers:
                 print("HEADER MISMATCH: {0}: {1}".format(file, header))
 
 
@@ -314,7 +325,7 @@ def print_key_errors(data):
     keys = set([])
     for file in data:
         for key in data[file]:
-            if key not in WELL_KNOWN_KEYS and key != "error":
+            if key not in Config.well_known_keys and key != "error":
                 keys.add(key)
     if keys:
         print("UNKNOWN KEYS: {0}".format(keys))
@@ -335,10 +346,10 @@ def fix_summary_key(old):
 
 
 def fix_count_key(old):
-    """Standardize the header names based as in FIELD_NAMES."""
+    """Standardize the header names based as in Config.field_names."""
 
-    if old in FIELD_NAMES:
-        return FIELD_NAMES[old]
+    if old in Config.field_names:
+        return Config.field_names[old]
     return old
 
 
@@ -374,20 +385,16 @@ def write_file(connection, filename, summary):
     return ("Ok", file_id)
 
 
-SUMMARY_KEYS = [c for c in WELL_KNOWN_KEYS[:-2] if c not in FILE_KEYS]
-SUMMARY_COLUMNS = [fix_summary_key(c) for c in SUMMARY_KEYS]
-
-
 def write_summary(connection, file_id, summary):
     """Save the summary dat found in file_id to the database connection."""
 
-    columns = ",".join(SUMMARY_COLUMNS)
-    values = ",".join(["?"] * len(SUMMARY_COLUMNS))
+    columns = ",".join(Config.summary_columns)
+    values = ",".join(["?"] * len(Config.summary_columns))
     sql = "INSERT SonarCountFileSummaries (Sonar_Count_File_ID,{0}) VALUES (?,{1});"
     sql = sql.format(columns, values)
     # print(sql)
     data = [file_id]
-    for key in SUMMARY_KEYS:
+    for key in Config.summary_keys:
         if key in summary:
             data.append(summary[key])
         else:
@@ -407,8 +414,8 @@ def write_counts(connection, file_id, header, counts):
     """Save the sonar counts found in file_id to the database connection."""
 
     columns = ",".join(header)
-    for old in FIELD_NAMES:
-        new = FIELD_NAMES[old]
+    for old in Config.field_names:
+        new = Config.field_names[old]
         columns = columns.replace(old, new)
     values = ",".join(["?"] * len(header))
     sql = "INSERT SonarCountFileCounts (Sonar_Count_File_ID,{0}) VALUES (?,{1});"
@@ -475,9 +482,9 @@ def main(source, do_test=True, do_save=False, server=None, database=None):
 
 if __name__ == "__main__":
     main(
-        CONFIG["source"],
-        do_test=CONFIG["test"],
-        do_save=CONFIG["save"],
-        server=CONFIG["server"],
-        database=CONFIG["database"],
+        Config.source,
+        do_test=Config.test,
+        do_save=Config.save,
+        server=Config.server,
+        database=Config.database,
     )
