@@ -170,6 +170,16 @@ def get_connection_or_die(server, database):
 
 
 def parse_header(file_handle, file_data):
+    """
+    Reads header lines from file_handle and puts important finds in file_data.
+
+    Most header lines are in the form of `key = value` which are returned in the
+    file_data dictionary.
+
+    Caller can continue reading from file_handle knowing all header lines have
+    been read.
+    """
+
     found_end = False
     for line in file_handle:
         line = line.strip()
@@ -195,6 +205,17 @@ def parse_header(file_handle, file_data):
 
 
 def parse_body(file_handle, file_data):
+    """
+    Reads body lines from file_handle and puts important finds in file_data.
+
+    Most body lines are in the form of space separated values.  Selected values
+    are saved as a list of rows which are returned in the "body" key of the
+    file_data dictionary.
+
+    Caller can continue reading from file_handle knowing all body lines have
+    been read.
+    """
+
     found_end = False
     header = None
     items = None
@@ -230,6 +251,12 @@ def parse_body(file_handle, file_data):
 
 
 def parse_footer(file_handle, file_data):
+    """
+    Reads footer lines from file_handle and puts important finds in file_data.
+
+    Caller can continue reading from file_handle knowing all footer lines have
+    been read.
+    """
     for line in file_handle:
         if line[:2] == "1:":
             line = line[2:]
@@ -242,6 +269,8 @@ def parse_footer(file_handle, file_data):
 
 
 def parse_file(filename, data):
+    """Reads filename and distill key elements in to the data dictionary."""
+
     file_data = {}
     with open(filename, "r", encoding="utf-8") as file_handle:
         try:
@@ -254,18 +283,24 @@ def parse_file(filename, data):
 
 
 def parse_folder(root, data):
+    """Get the data from all files in a folder."""
+
     for (foldername, _, filenames) in os.walk(root):
         for filename in filenames:
             parse_file(os.path.join(foldername, filename), data)
 
 
 def print_errors(data):
+    """Print any errors found in the data."""
+
     for file in data:
         if "error" in data[file]:
             print("{0}: {1}".format(file, data[file]["error"]))
 
 
 def print_body_headers_errors(data):
+    """Print any headers found in the files that do not meet expectations."""
+
     for file in data:
         if "body_header" in data[file]:
             header = data[file]["body_header"]
@@ -274,6 +309,8 @@ def print_body_headers_errors(data):
 
 
 def print_key_errors(data):
+    """Print any unexpected keys found in the files."""
+
     keys = set([])
     for file in data:
         for key in data[file]:
@@ -284,22 +321,30 @@ def print_key_errors(data):
 
 
 def test(data):
+    """Print any errors found in the file data."""
+
     print_errors(data)
     print_body_headers_errors(data)
     print_key_errors(data)
 
 
 def fix_summary_key(old):
+    """Replace space with underscore in old."""
+
     return old.replace("  ", "_").replace(" ", "_")
 
 
 def fix_count_key(old):
+    """Standardize the header names based as in FIELD_NAMES."""
+
     if old in FIELD_NAMES:
         return FIELD_NAMES[old]
     return old
 
 
 def write_file(connection, filename, summary):
+    """Save the contents of filename in database connection, return the File ID."""
+
     with open(filename, "rb") as file_handle:
         # open/read file as a binary blob (bytes not str)
         contents = file_handle.read()
@@ -334,6 +379,8 @@ SUMMARY_COLUMNS = [fix_summary_key(c) for c in SUMMARY_KEYS]
 
 
 def write_summary(connection, file_id, summary):
+    """Save the summary dat found in file_id to the database connection."""
+
     columns = ",".join(SUMMARY_COLUMNS)
     values = ",".join(["?"] * len(SUMMARY_COLUMNS))
     sql = "INSERT SonarCountFileSummaries (Sonar_Count_File_ID,{0}) VALUES (?,{1});"
@@ -357,6 +404,8 @@ def write_summary(connection, file_id, summary):
 
 
 def write_counts(connection, file_id, header, counts):
+    """Save the sonar counts found in file_id to the database connection."""
+
     columns = ",".join(header)
     for old in FIELD_NAMES:
         new = FIELD_NAMES[old]
@@ -379,6 +428,8 @@ def write_counts(connection, file_id, header, counts):
 
 
 def save(data, conn):
+    """Save the data found in files to the database connection conn."""
+
     for file_name in data:
         state, response = write_file(conn, file_name, data[file_name])
         if state == "Ok":
@@ -394,6 +445,8 @@ def save(data, conn):
 
 
 def main(source, do_test=True, do_save=False, server=None, database=None):
+    """Parses the files in source accorinding to the remaining parameters."""
+
     conn = None
     if do_save:
         if server is None or database is None:
