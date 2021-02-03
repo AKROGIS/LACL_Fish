@@ -286,6 +286,9 @@ def parse_file(filename, data):
 
     file_data = {}
     with open(filename, "r", encoding="utf-8") as file_handle:
+        # pylint: disable=broad-except
+        # lots of things could go wrong parsing the files so I want to catch
+        # all exceptions.  They will be captured for reporting issues.
         try:
             parse_header(file_handle, file_data)
             parse_body(file_handle, file_data)
