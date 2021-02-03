@@ -30,7 +30,7 @@ It can be installed with `pip install pyodbc`
 NOTE: with py3 and unicode_literals (py2) all strings are unicode.  However,
 the database fields are all 8bit characters (not unicode), except for the
 filename.  This is acceptable/appropriate because the text in the datafiles is
-limited to ASCII.  If this changes, the database schema will need to change. 
+limited to ASCII.  If this changes, the database schema will need to change.
 """
 
 from __future__ import absolute_import, division, print_function, unicode_literals
@@ -315,7 +315,7 @@ def write_file(connection, filename, summary):
         with connection.cursor() as wcursor:
             file_id = wcursor.execute(sql, data).fetchval()
     except Exception as ex:
-        err = "Database error:\n" + str(sql) + "\n" + str(ex)
+        err = "Database error:\n{0}\n{1}".format(sql, ex)
         return ("Error", err)
     if file_id is None:
         return ("Error", "Database did not return the Sonar_Count_File_ID")
@@ -343,7 +343,7 @@ def write_summary(connection, file_id, summary):
             # print(data)
             wcursor.execute(sql, data)
     except Exception as ex:
-        err = "Database error:\n" + str(sql) + "\n" + str(ex)
+        err = "Database error:\n{0}\n{1}".format(sql, ex)
         print(err)
         return err
     return None
@@ -365,7 +365,7 @@ def write_counts(connection, file_id, header, counts):
                 # print(data)
                 wcursor.execute(sql, data)
     except Exception as ex:
-        err = "Database error:\n" + str(sql) + "\n" + str(ex)
+        err = "Database error:\n{0}\n{1}".format(sql, ex)
         print(err)
         return err
     return None
