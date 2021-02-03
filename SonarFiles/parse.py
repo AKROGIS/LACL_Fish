@@ -143,12 +143,6 @@ class Config(object):
         "N": "Repeat_Count",
     }
 
-    # The keys, from the well known keys, that we put in the summary table.
-    summary_keys = [c for c in well_known_keys[:-2] if c not in file_keys]
-
-    # These are the names of the database columns for the summary keys.
-    summary_columns = [fix_summary_key(c) for c in summary_keys]
-
 
 def get_connection_or_die(server, database):
     """
@@ -393,13 +387,19 @@ def write_file(connection, filename, summary):
 def write_summary(connection, file_id, summary):
     """Save the summary dat found in file_id to the database connection."""
 
-    columns = ",".join(Config.summary_columns)
-    values = ",".join(["?"] * len(Config.summary_columns))
+    # The keys, from the well known keys, that we put in the summary table.
+    summary_keys = [c for c in Config.well_known_keys[:-2] if c not in Config.file_keys]
+
+    # These are the names of the database columns for the summary keys.
+    summary_columns = [fix_summary_key(c) for c in summary_keys]
+
+    columns = ",".join(summary_columns)
+    values = ",".join(["?"] * len(summary_columns))
     sql = "INSERT SonarCountFileSummaries (Sonar_Count_File_ID,{0}) VALUES (?,{1});"
     sql = sql.format(columns, values)
     # print(sql)
     data = [file_id]
-    for key in Config.summary_keys:
+    for key in summary_keys:
         if key in summary:
             data.append(summary[key])
         else:
