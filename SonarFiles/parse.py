@@ -39,6 +39,8 @@ from io import open
 import os
 import sys
 
+import pyodbc
+
 
 class Config(object):
     """Namespace for configuration parameters. Edit as needed."""
@@ -377,7 +379,7 @@ def write_file(connection, filename, summary):
     try:
         with connection.cursor() as wcursor:
             file_id = wcursor.execute(sql, data).fetchval()
-    except Exception as ex:
+    except pyodbc.Error as ex:
         err = "Database error:\n{0}\n{1}".format(sql, ex)
         return ("Error", err)
     if file_id is None:
@@ -403,7 +405,7 @@ def write_summary(connection, file_id, summary):
         with connection.cursor() as wcursor:
             # print(data)
             wcursor.execute(sql, data)
-    except Exception as ex:
+    except pyodbc.Error as ex:
         err = "Database error:\n{0}\n{1}".format(sql, ex)
         print(err)
         return err
@@ -427,7 +429,7 @@ def write_counts(connection, file_id, header, counts):
                 data = [file_id] + count
                 # print(data)
                 wcursor.execute(sql, data)
-    except Exception as ex:
+    except pyodbc.Error as ex:
         err = "Database error:\n{0}\n{1}".format(sql, ex)
         print(err)
         return err
@@ -454,21 +456,6 @@ def save(data, conn):
 def main(source, do_test=True, do_save=False, server=None, database=None):
     """Parses the files in source accorinding to the remaining parameters."""
 
-    conn = None
-    if do_save:
-        if server is None or database is None:
-            print("Error Server and Database must be specified in save mode.")
-            sys.exit()
-        try:
-            import pyodbc
-        except ImportError:
-            pyodbc = None
-            pydir = os.path.dirname(sys.executable)
-            print("pyodbc module not found, make sure it is installed with")
-            print(pydir + r"\Scripts\pip.exe install pyodbc")
-            sys.exit()
-        conn = get_connection_or_die(pyodbc, server, database)
-
     data = {}
     if os.path.isfile(source):
         parse_file(source, data)
@@ -477,6 +464,7 @@ def main(source, do_test=True, do_save=False, server=None, database=None):
     if do_test:
         test(data)
     if do_save:
+        conn = get_connection_or_die(server, database)
         save(data, conn)
 
 
