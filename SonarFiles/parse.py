@@ -137,6 +137,38 @@ FIELD_NAMES = {
 }
 
 
+def get_connection_or_die(server, database):
+    """
+    Get a Trusted pyodbc connection to the SQL Server database on server.
+
+    Try several connection strings.
+    See https://github.com/mkleehammer/pyodbc/wiki/Connecting-to-SQL-Server-from-Windows
+
+    Exit with an error message if there is no successful connection.
+    """
+    drivers = [
+        "{ODBC Driver 17 for SQL Server}",  # supports SQL Server 2008 through 2017
+        "{ODBC Driver 13.1 for SQL Server}",  # supports SQL Server 2008 through 2016
+        "{ODBC Driver 13 for SQL Server}",  # supports SQL Server 2005 through 2016
+        "{ODBC Driver 11 for SQL Server}",  # supports SQL Server 2005 through 2014
+        "{SQL Server Native Client 11.0}",  # DEPRECATED: released with SQL Server 2012
+        # '{SQL Server Native Client 10.0}',    # DEPRECATED: released with SQL Server 2008
+    ]
+    conn_template = "DRIVER={0};SERVER={1};DATABASE={2};Trusted_Connection=Yes;"
+    for driver in drivers:
+        conn_string = conn_template.format(driver, server, database)
+        try:
+            connection = pyodbc.connect(conn_string)
+            return connection
+        except pyodbc.Error:
+            pass
+    print("Rats!! Unable to connect to the database.")
+    print("Make sure you have an ODBC driver installed for SQL Server")
+    print("and your AD account has the proper DB permissions.")
+    print("Contact akro_gis_helpdesk@nps.gov for assistance.")
+    sys.exit()
+
+
 def parse_header(file_handle, file_data):
     found_end = False
     for line in file_handle:
@@ -255,31 +287,6 @@ def test(data):
     print_errors(data)
     print_body_headers_errors(data)
     print_key_errors(data)
-
-
-def get_connection_or_die(pyodbc, server, database):
-    # See https://github.com/mkleehammer/pyodbc/wiki/Connecting-to-SQL-Server-from-Windows
-    drivers = [
-        "{ODBC Driver 17 for SQL Server}",  # supports SQL Server 2008 through 2017
-        "{ODBC Driver 13.1 for SQL Server}",  # supports SQL Server 2008 through 2016
-        "{ODBC Driver 13 for SQL Server}",  # supports SQL Server 2005 through 2016
-        "{ODBC Driver 11 for SQL Server}",  # supports SQL Server 2005 through 2014
-        "{SQL Server Native Client 11.0}",  # DEPRECATED: released with SQL Server 2012
-        # "{SQL Server Native Client 10.0}",    # DEPRECATED: released with SQL Server 2008
-    ]
-    conn_template = "DRIVER={0};SERVER={1};DATABASE={2};Trusted_Connection=Yes;"
-    for driver in drivers:
-        conn_string = conn_template.format(driver, server, database)
-        try:
-            connection = pyodbc.connect(conn_string)
-            return connection
-        except pyodbc.Error:
-            pass
-    print("Rats!! Unable to connect to the database.")
-    print("Make sure you have an ODBC driver installed for SQL Server")
-    print("and your AD account has the proper DB permissions.")
-    print("Contact regan_sarwas@nps.gov for assistance.")
-    sys.exit()
 
 
 def fix_summary_key(old):
