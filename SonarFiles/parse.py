@@ -380,8 +380,8 @@ def write_file(connection, filename, summary):
     # print(data)
     file_id = None
     try:
-        with connection.cursor() as wcursor:
-            file_id = wcursor.execute(sql, data).fetchval()
+        with connection.cursor() as cursor:
+            file_id = cursor.execute(sql, data).fetchval()
     except pyodbc.Error as ex:
         err = "Database error:\n{0}\n{1}".format(sql, ex)
         return ("Error", err)
@@ -405,9 +405,9 @@ def write_summary(connection, file_id, summary):
         else:
             data.append(None)
     try:
-        with connection.cursor() as wcursor:
+        with connection.cursor() as cursor:
             # print(data)
-            wcursor.execute(sql, data)
+            cursor.execute(sql, data)
     except pyodbc.Error as ex:
         err = "Database error:\n{0}\n{1}".format(sql, ex)
         print(err)
@@ -427,11 +427,11 @@ def write_counts(connection, file_id, header, counts):
     sql = sql.format(columns, values)
     # print(sql)
     try:
-        with connection.cursor() as wcursor:
+        with connection.cursor() as cursor:
             for count in counts:
                 data = [file_id] + count
                 # print(data)
-                wcursor.execute(sql, data)
+                cursor.execute(sql, data)
     except pyodbc.Error as ex:
         err = "Database error:\n{0}\n{1}".format(sql, ex)
         print(err)
