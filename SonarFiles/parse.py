@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 """
 Reads a file (or folder of files recursively) of Sonar data from a
 XXX Hardware/software data collector
