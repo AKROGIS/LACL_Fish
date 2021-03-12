@@ -31,34 +31,34 @@ for uploading files to the database and reviewing the files
 [DataModel](DataModel).
 
 There are also two SQL CLR projects (to load custom functions into the SQL
-Server database)
+Server database).
 
-* [SqlServer_Files](SqlServer_Files).
-  This project creates an SQL Assembly for a Store Procedure called
-  `dbo.ProcessRawDataFIle` which takes a `FileId` from the `dbo.RawDataFiles`
+* [SqlServer_Files](SqlServer_Files)
+
+  This project creates an SQL Assembly for a store procedure called
+  `dbo.ProcessRawDataFile` which takes a `FileId` from the `dbo.RawDataFiles`
   and process the file contents in the blob column into tabular data in the
   `dbo.TelemetryData*` tables depending on the type/contents of file.
-  This assembly has been loaded into the server.  If it needs to be modified,
+  This assembly has been loaded into the server. If it needs to be modified,
   see the Animal Movements repo for instructions on loading the compiled
-  assembly into the database and creating the Stored Procedure that calls it.
+  assembly into the database and creating the stored procedure that calls it.
 
-* [SqlServer_Functions](SqlServer_Functions).
+* [SqlServer_Functions](SqlServer_Functions)
+
   This project creates an SQL Assembly for several scalar valued functions
   (`dbo.DateTimeFromAts`, `dbo.DateTimeFromAtsWithSeconds`, `dbo.LocalTime`,
-  `dbo.Sha1Hash` and `dbo.UtcTime`) that are called
-  `dbo.ProcessRawDataFIle` which takes a `FileId` from the `dbo.RawDataFiles`
-  and process the file contents in the blob column into tabular data in the
-  `dbo.TelemetryData*` tables depending on the type/contents of file.
-  This assembly has been loaded into the server.  If it needs to be modified,
+  `dbo.Sha1Hash` and `dbo.UtcTime`) that can be called by other database objects
+  Currently only `dbo.Sha1hash` is being used in the definition of the
+  `dbo.RawDataFiles` table. If these functions need to be modified,
   see the Animal Movements repo for instructions on loading the compiled
-  assembly into the database and creating the Stored Procedure that calls it.
+  assembly into the database and creating the functions that call it.
 
 Data files provided by Dan Young were loaded into the database, and a number of
 [queries](Database/Helpful%20Queries.sql)
 were provided to analyze the data and visualize it in ArcMap.  It has not been
 updated since 2014.
 
-**NOTE** This phase was never fully automated.  Some of the processing was done
+**NOTE:** This phase was never fully automated.  Some of the processing was done
 manually with the queries found in
 [Database/Helpful Queries.sql](Database/Helpful%20Queries.sql).
 
@@ -66,20 +66,20 @@ manually with the queries found in
 
 #### Tables (Phase 1)
 
-* AntennaLocations - Derived from `TelemetryData*` tables
-* Locations - Derived from `TelemetryData*` tables
-* LookupFileFormats - Manually created/maintained
-* LookupLocationType - Manually created/maintained
-* LookupRadioManufacturers - Manually created/maintained
-* RawDataFiles - Maintained by user using `FileUploader` app.
-* TelemetryDataATSStationary - Derived from `RawDataFiles`
-* TelemetryDataATSTracking - Derived from `RawDataFiles`
-* TelemetryDataSRX400Antennas - Derived from `RawDataFiles`
-* TelemetryDataSRX400BatteryStatus - Derived from `RawDataFiles`
-* TelemetryDataSRX400Channels - Derived from `RawDataFiles`
-* TelemetryDataSRX400Environments - Derived from `RawDataFiles`
-* TelemetryDataSRX400Locations - Derived from `RawDataFiles`
-* TelemetryDataSRX400TrackingData - Derived from `RawDataFiles`
+* `AntennaLocations` - Derived from `TelemetryData*` tables
+* `Locations` - Derived from `TelemetryData*` tables
+* `LookupFileFormats` - Manually created/maintained
+* `LookupLocationType` - Manually created/maintained
+* `LookupRadioManufacturers` - Manually created/maintained
+* `RawDataFiles` - Maintained by user using `FileUploader` app.
+* `TelemetryDataATSStationary` - Derived from `RawDataFiles`
+* `TelemetryDataATSTracking` - Derived from `RawDataFiles`
+* `TelemetryDataSRX400Antennas` - Derived from `RawDataFiles`
+* `TelemetryDataSRX400BatteryStatus` - Derived from `RawDataFiles`
+* `TelemetryDataSRX400Channels` - Derived from `RawDataFiles`
+* `TelemetryDataSRX400Environments` - Derived from `RawDataFiles`
+* `TelemetryDataSRX400Locations` - Derived from `RawDataFiles`
+* `TelemetryDataSRX400TrackingData` - Derived from `RawDataFiles`
 
 #### Stored Procedures
 
@@ -105,7 +105,7 @@ manually with the queries found in
 
 * `LocationsWithFileError` - Location data suitable for ArcGIS
 
-Also see these [Database/Helpful Queries.sql](Database/Helpful%20Queries.sql).
+Also see [Database/Helpful Queries.sql](Database/Helpful%20Queries.sql).
 
 ## Phase 2 (Sonar)
 
@@ -119,9 +119,9 @@ I recall this phase began in 2018 with an initial upload of data from 2016-2018.
 Updates were done with data collected in 2019 and then again in 2020.
 
 Every year, a folder of files is provided by LACL (James Kramer in 2020).
-The `parse.py` script CONFIG object is edited to first test the input files
+The `parse.py` script `Config` object is edited to first test the input files
 (an entire folder of files can be processed at once). If there are no
-processing errors in the test, then edit the CONFIG to do an actual database
+processing errors in the test, then edit the `Config` to do an actual database
 update and then re-run the script.  In the past the processing has failed due to
 a corrupt (usually empty) sonar file. These can be removed from the processing
 folder and returned to LACL for remedial action. The remainder of the files can
@@ -130,25 +130,27 @@ submitted which may require edits to the script.  Hopefully small tweaks to the
 global configuration parameters will be sufficient.
 
 Once the data is loaded the LACL staff access the data directly using
-*Azure DataStudio* and SQL queries.
+*Azure Data Studio* and SQL queries.
 
 ### Phase 2 Project Files
 
 * `build_db_with_types.sql` - An SQL script to build the initial schema.  This
   schema was not used (see `build_db.sql`), as there were too many data loading
-  errors importing text to real database types like int/float/datetime, etc.
-  instead the schema uses all `VarChar` columns, that are converted in queries
-  as needed for analysis.
+  errors importing text to real database types like `int`/`float`/`datetime`,
+  etc. instead the schema uses all `varchar` columns, that are converted in
+  queries as needed for analysis.
 * `build_db.sql` - An SQL script initially used to create the initial
-  empty tables. This is no longer needed, unless the database is recreated from scratch.
-* `parse.py` - a Python script to read a folder of sonar data files and check
-  for potential problems (without loading data), or load the data into the database.
+  empty tables. This is no longer needed, unless the database is recreated
+  from scratch.
+* `parse.py` - a Python 2/3 script to read a folder of sonar data files and
+  check for potential problems (without loading data), or load the data into the
+  database.
   This script needs to be edited before being run on a new collection of data
   files.  See the comments at the head of this file for additional information
   on the correct usage.
 * `project_assignment.sql` - Correct the project names after the initial load.
-  The `parse.py` script has been corrected since then and this script is no longer
-  needed.
+  The `parse.py` script has been corrected since then and this script is no
+  longer needed.
 * `Sample_Queries.sql` - Examples of queries the users might use to start
   analyzing the data.
 * `Variability_of_Attributes.sql` - Analysis of the variability of the
@@ -159,14 +161,14 @@ Once the data is loaded the LACL staff access the data directly using
 
 #### Tables (Phase2)
 
-* SonarCountFileCounts - In addition to summary metadata, each file usually
+* `SonarCountFileCounts` - In addition to summary metadata, each file usually
   includes a list of records for each fish count in the file.  All these
   records are captured in this table.
-* SonarCountFiles - One record for each file uploaded.  The record includes
+* `SonarCountFiles` - One record for each file uploaded.  The record includes
   a `Contents` field which contains the entire contents of the source file.
-* SonarCountFileSummaries - Each file contains Summary (metadata) about the
+* `SonarCountFileSummaries` - Each file contains a summary (metadata) about the
   counts in the file.  This data is extracted to tabular form in this table
-  (one record per file)
+  (one record per file).
 
 ## Phase 3 (Escapement)
 
@@ -178,14 +180,14 @@ The initial spreadsheet was converted to CSV and upload into the `Escapements`
 table.  Each year a new spreadsheet is provided and it is appended to the
 table with the same process.  It may be necessary to adjust the layout and
 formatting of the excel file before exporting to CSV, so that the CSV file
-creates the same schema.  I suggest loading into a test table to ensure a
+creates the same schema. I suggest loading into a test table to ensure a
 compatible schema before appending the test table into the `Escapements` table.
-Azure Data Studio and Sql Server Management Studio have tools to load a CSV
+*Azure Data Studio* and *Sql Server Management Studio* have tools to load a CSV
 file into a new table in SQL server.  You can check for Primary Key violations
 before appending with something like
 
 ```SQL
-Select Location, DateStamp, Hour, count(*)
+Select Location, DateStamp, Hour, count(*) as Duplicates
 from Escape2020 group by Location, DateStamp, Hour having count(*) > 1
 ```
 
@@ -196,20 +198,21 @@ INSERT INTO Escapements SELECT * FROM Escape2020
 ```
 
 Once the data is loaded the LACL staff access the data directly
-using *Azure DataStudio* and SQL queries.
+using *Azure Data Studio* and SQL queries.
 
 ### Phase 3 Project Files
 
-All Project Files are in the [Escapement](Escapements) folder.
+All project Files are in the [Escapements](Escapements) folder.
 
 * `build_db.sql` - An SQL script to recreate an empty `Escapements` table.
   This is no longer needed, unless the database is recreated from scratch.
 * `LACL_Tower_vs_Sonar_Counts.sql` - A request query that compares the
-  sonar data (phase2) with the escapement data.  See the comments in the file
+  sonar data (phase 2) with the escapement data.  See the comments in the file
   for details.
 
 ### Phase 3 Database objects
 
 #### Tables (Phase3)
 
-* `Escapements`
+* `Escapements` - See [build_db.sql](Escapements/build_db.sql)
+  for the table schema.
